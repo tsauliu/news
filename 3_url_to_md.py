@@ -43,18 +43,36 @@ for file in os.listdir(folder_path):
             print(f"Error processing file {file_path}: {e}")
 
 #%%
-for _, row in urls.iterrows():
+import concurrent.futures
+import time
+
+def process_url(row):
     safe_title = ''.join(c if c.isalnum() else '_' for c in row['title'])
     filename = f"{folder_path}/{row['publish_time'].split()[0]}_{row['mp_name']}_{safe_title[:30]}.md"
     print(filename)
     
     if os.path.exists(filename):
-        continue
+        return
     
     try:
-        content = summary(row['url'])        
+        content = summary(row['url'])
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(content)
+        return f"Processed: {row['url']}"
     except Exception as e:
-        print(f"Error: {row['url']} - {e}")
+        return f"Error: {row['url']} - {e}"
+
+# Use ThreadPoolExecutor to process URLs in parallel
+max_workers = 5  # Adjust based on your system capabilities and API rate limits
+with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+    # Submit all tasks and collect futures
+    futures = {executor.submit(process_url, row): row for _, row in urls.iterrows()}
+    
+    # Process results as they complete
+    for future in concurrent.futures.as_completed(futures):
+        result = future.result()
+        if result:
+            print(result)
+        # Add a small delay to avoid overwhelming the API
+        time.sleep(0.1)
 
