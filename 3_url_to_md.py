@@ -36,7 +36,7 @@ for file in os.listdir(folder_path):
                 content = f.read()
                 
             # Check if the file contains irrelevant content about WeChat product updates
-            if "微信，是一个生活方式" in content:
+            if any(keyword in content for keyword in ["微信，是一个生活方式","参数错误"]):
                 os.remove(file_path)
                 print(f"Deleted irrelevant file: {file_path}")
         except Exception as e:
