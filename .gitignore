@@ -1,1 +1,4 @@
 apikey.py
+login.bat
+data/
+__pycache__/
