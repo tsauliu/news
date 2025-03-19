@@ -24,7 +24,7 @@ def merge_md_files():
         for md_file in md_files:
             if any(keyword in open(md_file, 'r', encoding='utf-8').read() for keyword in ['该链接网页出现参数错误','微信，是一个生活方式']):
                 continue
-            
+
             try:
                 with open(md_file, 'r', encoding='utf-8') as infile:
                     outfile.write(infile.read())
@@ -32,7 +32,6 @@ def merge_md_files():
             except Exception as e:
                 print(f"Error reading {md_file}: {e}")
     
-    print(f"Merged {len(md_files)} files into {output_file}")
     return output_file
 
 output_file=merge_md_files()

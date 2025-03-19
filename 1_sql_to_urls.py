@@ -16,8 +16,8 @@ feeds = pd.read_sql_query("SELECT * FROM feeds", conn)
 
 article_clean=articles[['mp_id', 'title','publish_time', 'url']].merge(feeds.rename(columns={'id': 'mp_id'})[['mp_id', 'mp_name']], on='mp_id', how='left').drop(columns=['mp_id'])
 article_clean.sort_values(by='publish_time', ascending=False, inplace=True)
-# Filter to keep only the last 30 days of data
-article_clean = article_clean[pd.to_datetime(article_clean['publish_time']) >= (pd.to_datetime(friday_date) - pd.Timedelta(days=15))]
+
+article_clean = article_clean[pd.to_datetime(article_clean['publish_time']) >= (pd.to_datetime(friday_date) - pd.Timedelta(days=7))]
 
 
 folder_path = f'data/0_urls/'
