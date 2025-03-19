@@ -6,21 +6,18 @@ from datetime import datetime
 import pandas as pd
 from openai import OpenAI
 from apikey import api_key,model_id_md_to_summary
-
+from parameters import friday_date
 
 def merge_md_files():
     """Merge all markdown files in raw_mds into a single file"""
-    # Define paths
-    raw_mds_dir = os.path.join('data', '1_raw_mds')
-    output_dir = os.path.join('data', '2_combined_mds')
+    
+    # Setup paths and find markdown files
+    raw_mds_dir = f'data/1_raw_mds'
+    output_dir = f'data/2_combined_mds'
     os.makedirs(output_dir, exist_ok=True)
     
-    # Create output file
-    current_date = datetime.now().strftime('%Y-%m-%d')
-    output_file = os.path.join(output_dir, f'{current_date}_merged_news.md')
-    
-    # Find all markdown files
-    md_files = glob.glob(os.path.join(raw_mds_dir, '**', '*.md'), recursive=True)
+    output_file = f'{output_dir}/{friday_date}_merged_news.md'
+    md_files = glob.glob(f'{raw_mds_dir}/{friday_date}/*.md', recursive=True)
     
     # Merge content
     with open(output_file, 'w', encoding='utf-8') as outfile:        
@@ -59,11 +56,10 @@ def summary(combined_md):
 md_summary=summary(combined_md)
 
 # Save the summary to a file in the summary_mds folder
-summary_dir = os.path.join('data', '3_summary_mds')
+summary_dir = f'data/3_summary_mds'
 os.makedirs(summary_dir, exist_ok=True)
 
-current_date = datetime.now().strftime('%Y-%m-%d')
-summary_file = os.path.join(summary_dir, f'{current_date}_summary.md')
+summary_file = os.path.join(summary_dir, f'{friday_date}_summary.md')
 
 try:
     with open(summary_file, 'w', encoding='utf-8') as f:

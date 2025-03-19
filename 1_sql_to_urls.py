@@ -3,6 +3,7 @@
 import sqlite3
 import pandas as pd
 import os
+from parameters import friday_date
 
 conn = sqlite3.connect('data/wewe-rss.db')
 articles = pd.read_sql_query("SELECT * FROM articles", conn)
@@ -23,5 +24,4 @@ folder_path = f'data/0_urls/'
 os.makedirs(folder_path, exist_ok=True)
 
 # Get current date for the filename
-current_date = pd.Timestamp.now().strftime('%Y-%m-%d')
-article_clean[['publish_time','mp_name','title', 'url']].to_csv(os.path.join(folder_path, f'{current_date}_article_urls.csv'), index=False)
+article_clean[['publish_time','mp_name','title', 'url']].to_csv(os.path.join(folder_path, f'{friday_date}_article_urls.csv'), index=False)

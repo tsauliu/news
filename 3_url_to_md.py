@@ -1,10 +1,10 @@
 # AI agent to read the webpage and summarize the news
 #%%
 import os
-import datetime
 import pandas as pd
 from openai import OpenAI
 from apikey import api_key,model_id_url_to_summary
+from parameters import friday_date
 
 client = OpenAI(
     base_url="https://ark.cn-beijing.volces.com/api/v3/bots",
@@ -20,11 +20,10 @@ def summary(url):
     )
     return completion.choices[0].message.content
 
-today_date = datetime.datetime.now().strftime('%Y-%m-%d')
+urls=pd.read_csv(f'./data/0_urls/{friday_date}_article_urls.csv')
 
-urls=pd.read_csv(f'./data/0_urls/{today_date}_article_urls.csv')
 
-folder_path = f'./data/1_raw_mds/{today_date}'
+folder_path = f'./data/1_raw_mds/{friday_date}'
 os.makedirs(folder_path, exist_ok=True)
 
 # Loop through existing MD files to check and remove irrelevant content

@@ -3,10 +3,10 @@
 from docx import Document
 import pandas as pd
 import datetime
+from parameters import friday_date
 
 doc = Document('news_template.docx')
-today_date = datetime.datetime.now().strftime('%Y-%m-%d')
-summary_md=open(f'data/3_summary_mds/{today_date}_summary.md', 'r', encoding='utf-8').read()
+summary_md=open(f'data/3_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
 ## add the key takeaway for the week
 doc.add_heading('Key takeaway for Week – Mar 19', level=1)
 doc.add_paragraph('')
@@ -71,4 +71,4 @@ for sector in ['核心技术','商业落地','政策监管','企业战略','硬�
             doc.add_paragraph(row['content'])
             doc.add_paragraph('')
 
-doc.save(f'data/{today_date}_weekly_news.docx')
+doc.save(f'data/{friday_date}_weekly_news.docx')
