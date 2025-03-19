@@ -16,9 +16,8 @@ for line in lines:
     if line.startswith('## '):
         doc.add_paragraph('')
         doc.add_paragraph(line[3:], style='summarytitle')
-    elif line.startswith('# '):
-        # Add level 3 heading (title3)
-        doc.add_paragraph(line[2:], style='bullet')
+    elif len(line) > 10:
+        doc.add_paragraph(line[2:].replace('*','').replace('**','').replace('- ','').replace('#',''), style='bullet')
 
 doc.add_page_break()
 doc.add_heading(f'Detailed News for Week – {friday_date}', level=1)
