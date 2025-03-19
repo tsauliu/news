@@ -8,7 +8,7 @@ from parameters import friday_date
 doc = Document('news_template.docx')
 summary_md=open(f'data/3_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
 ## add the key takeaway for the week
-doc.add_heading('Key takeaway for Week – Mar 19', level=1)
+doc.add_heading(f'Key takeaway for Week – {friday_date}', level=1)
 doc.add_paragraph('')
 # Parse the summary markdown and add headings and paragraphs
 lines = summary_md.strip().split('\n')
@@ -21,9 +21,9 @@ for line in lines:
         doc.add_paragraph(line[2:], style='bullet')
 
 doc.add_page_break()
-doc.add_heading('Detailed News for Week – Mar 19', level=1)
+doc.add_heading(f'Detailed News for Week – {friday_date}', level=1)
 doc.add_paragraph('')
-combined_md=open('data/2_combined_mds/2025-03-19_merged_news.md', 'r', encoding='utf-8').read()
+combined_md=open(f'data/2_combined_mds/{friday_date}_merged_news.md', 'r', encoding='utf-8').read()
 lines = combined_md.strip().split('\n')
 # Convert lines to a dataframe
 

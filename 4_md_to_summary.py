@@ -22,6 +22,9 @@ def merge_md_files():
     # Merge content
     with open(output_file, 'w', encoding='utf-8') as outfile:        
         for md_file in md_files:
+            date=md_file.split('\\')[-1].split('_')[0]
+            if date <= '2025-03-18':
+                continue
             if any(keyword in open(md_file, 'r', encoding='utf-8').read() for keyword in ['该链接网页出现参数错误','微信，是一个生活方式']):
                 continue
 
