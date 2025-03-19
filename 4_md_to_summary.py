@@ -22,10 +22,11 @@ def merge_md_files():
     # Merge content
     with open(output_file, 'w', encoding='utf-8') as outfile:        
         for md_file in md_files:
+            if any(keyword in open(md_file, 'r', encoding='utf-8').read() for keyword in ['该链接网页出现参数错误','微信，是一个生活方式']):
+                continue
+            
             try:
                 with open(md_file, 'r', encoding='utf-8') as infile:
-                    if any(keyword in infile.read() for keyword in ['该链接网页出现参数错误','微信，是一个生活方式']):
-                        continue
                     outfile.write(infile.read())
                     outfile.write("\n\n---\n\n")
             except Exception as e:
