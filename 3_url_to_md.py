@@ -20,8 +20,10 @@ def summary(url):
     )
     return completion.choices[0].message.content
 
-urls=pd.read_csv('./data/urls/article_urls.csv')
 today_date = datetime.datetime.now().strftime('%Y-%m-%d')
+
+urls=pd.read_csv(f'./data/urls/{today_date}_article_urls.csv')
+
 folder_path = f'./data/1_raw_mds/{today_date}'
 os.makedirs(folder_path, exist_ok=True)
 
