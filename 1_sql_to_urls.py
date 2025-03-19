@@ -2,6 +2,7 @@
 # extract news from sqlite
 import sqlite3
 import pandas as pd
+import os
 
 conn = sqlite3.connect('data/wewe-rss.db')
 articles = pd.read_sql_query("SELECT * FROM articles", conn)
@@ -18,4 +19,7 @@ article_clean.sort_values(by='publish_time', ascending=False, inplace=True)
 article_clean = article_clean[pd.to_datetime(article_clean['publish_time']) >= (pd.Timestamp.now() - pd.Timedelta(days=15))]
 
 
-article_clean[['publish_time','mp_name','title', 'url']].to_csv('./data/urls/article_urls.csv', index=False)
+folder_path = f'data/0_urls/'
+os.makedirs(folder_path, exist_ok=True)
+
+article_clean[['publish_time','mp_name','title', 'url']].to_csv(os.path.join(folder_path, 'article_urls.csv'), index=False)

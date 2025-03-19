@@ -1,11 +1,10 @@
-
 # AI agent to read the webpage and summarize the news
 #%%
 import os
 import datetime
 import pandas as pd
 from openai import OpenAI
-from apikey import api_key,model_id
+from apikey import api_key,model_id_url_to_summary
 
 client = OpenAI(
     base_url="https://ark.cn-beijing.volces.com/api/v3/bots",
@@ -14,7 +13,7 @@ client = OpenAI(
 
 def summary(url):
     completion = client.chat.completions.create(
-        model=model_id,
+        model=model_id_url_to_summary,
         messages=[
             {"role": "user", "content": url},
         ],
@@ -23,7 +22,7 @@ def summary(url):
 
 urls=pd.read_csv('./data/urls/article_urls.csv')
 today_date = datetime.datetime.now().strftime('%Y-%m-%d')
-folder_path = f'./data/raw_mds/{today_date}'
+folder_path = f'./data/1_raw_mds/{today_date}'
 os.makedirs(folder_path, exist_ok=True)
 
 for _, row in urls.iterrows():
