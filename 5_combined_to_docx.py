@@ -35,7 +35,7 @@ for line in lines:
     elif line.startswith('link: ') and news_data:
         news_data[-1]['link'] = line[6:]
     elif line.startswith('sector: ') and news_data:
-        news_data[-1]['sector'] = line[8:]
+        news_data[-1]['sector'] = line[8:].split('、')[0]
     elif line.startswith('author: ') and news_data:
         news_data[-1]['author'] = line[8:]
     elif line.startswith('date: ') and news_data:
@@ -45,24 +45,30 @@ for line in lines:
 
 # Create dataframe
 news_df = pd.DataFrame(news_data)
-
+c1=news_df.sector!='其他'
+news_df=news_df[c1].sort_values(by=['sector','date'], ascending=False)
 
 # Loop through the dataframe to write to doc
-for _, row in news_df.iterrows():
-    doc.add_paragraph('')
-    doc.add_heading(row['title'], level=3)
-    
-    if 'link' in row and not pd.isna(row['link']):
-        doc.add_paragraph(row['link'], style='link')
-    
-    if 'author' in row and not pd.isna(row['author']):
-        if 'date' in row and not pd.isna(row['date']):
-            doc.add_paragraph(row['date'] + ' ' + row['author'], style='author')
-        else:
-            doc.add_paragraph(row['author'], style='author')
-    
-    if 'content' in row and not pd.isna(row['content']):
-        doc.add_paragraph(row['content'])
+for sector in ['核心技术','商业落地','政策监管','企业战略','硬件设备','数据与地图','资本动向']:
+    news_df_sector=news_df[news_df.sector==sector]
+    if news_df_sector.empty:
+        continue
+    doc.add_heading(sector, level=2)
+    for _, row in news_df_sector.iterrows():
         doc.add_paragraph('')
+        doc.add_heading(row['title'], level=3)
+    
+        if 'link' in row and not pd.isna(row['link']):
+            doc.add_paragraph(row['link'], style='link')
+        
+        if 'author' in row and not pd.isna(row['author']):
+            if 'date' in row and not pd.isna(row['date']):
+                doc.add_paragraph(row['date'] + ' ' + row['author'], style='author')
+            else:
+                doc.add_paragraph(row['author'], style='author')
+        
+        if 'content' in row and not pd.isna(row['content']):
+            doc.add_paragraph(row['content'])
+            doc.add_paragraph('')
 
 doc.save(f'data/{today_date}_weekly_news.docx')
