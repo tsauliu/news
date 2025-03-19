@@ -22,10 +22,11 @@ def summary(url):
 
 today_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-urls=pd.read_csv(f'./data/urls/{today_date}_article_urls.csv')
+urls=pd.read_csv(f'./data/0_urls/{today_date}_article_urls.csv')
 
 folder_path = f'./data/1_raw_mds/{today_date}'
 os.makedirs(folder_path, exist_ok=True)
+
 
 for _, row in urls.iterrows():
     safe_title = ''.join(c if c.isalnum() else '_' for c in row['title'])
