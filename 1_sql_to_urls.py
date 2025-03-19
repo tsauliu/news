@@ -1,5 +1,5 @@
 # %%
-# TODO extract news from sqlite
+# extract news from sqlite
 import sqlite3
 import pandas as pd
 

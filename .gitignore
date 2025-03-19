@@ -3,3 +3,5 @@ login.bat
 data/
 __pycache__/
 docker-compose.yml
+pyenv.sh
+*.docx

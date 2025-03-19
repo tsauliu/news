@@ -1,3 +1,5 @@
+
+# AI agent to read the webpage and summarize the news
 #%%
 import os
 import datetime
@@ -38,5 +40,4 @@ for _, row in urls.iterrows():
             f.write(content)
     except Exception as e:
         print(f"Error: {row['url']} - {e}")
-
 
