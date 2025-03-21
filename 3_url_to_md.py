@@ -11,10 +11,13 @@ client = OpenAI(
     api_key=api_key
 )
 
+prompt=open('./prompt/auto_url_to_md.md','r',encoding='utf-8').read()
+
 def summary(url):
     completion = client.chat.completions.create(
         model=model_id_url_to_summary,
         messages=[
+            {"role": "system", "content": prompt},
             {"role": "user", "content": url},
         ],
     )
@@ -22,7 +25,7 @@ def summary(url):
 
 urls=pd.read_csv(f'./data/0_urls/{friday_date}_article_urls.csv')
 
-
+#%%
 folder_path = f'./data/1_raw_mds/{friday_date}'
 os.makedirs(folder_path, exist_ok=True)
 

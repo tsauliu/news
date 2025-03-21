@@ -47,10 +47,13 @@ client = OpenAI(
     api_key=api_key
 )
 
+prompt=open('./prompt/auto_md_to_summary.md','r',encoding='utf-8').read()
+
 def summary(combined_md):
     completion = client.chat.completions.create(
         model=model_id_md_to_summary,
         messages=[
+            {"role": "system", "content": prompt},
             {"role": "user", "content": combined_md},
         ],
     )
