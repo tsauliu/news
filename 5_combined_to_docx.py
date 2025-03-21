@@ -3,7 +3,7 @@
 from docx import Document
 import pandas as pd
 import datetime
-from parameters import friday_date
+from parameters import friday_date,sector_list
 
 doc = Document('news_template.docx')
 summary_md=open(f'data/3_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
@@ -48,7 +48,7 @@ c1=news_df.sector!='其他'
 news_df=news_df[c1].sort_values(by=['sector','date'], ascending=False)
 
 # Loop through the dataframe to write to doc
-for sector in ['核心技术','商业落地','政策监管','企业战略','硬件设备','数据与地图','资本动向']:
+for sector in sector_list:
     news_df_sector=news_df[news_df.sector==sector]
     if news_df_sector.empty:
         continue

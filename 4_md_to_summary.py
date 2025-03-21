@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 from openai import OpenAI
 from apikey import api_key,model_id_md_to_summary
-from parameters import friday_date
+from parameters import friday_date,errorkeywords
 
 def merge_md_files():
     """Merge all markdown files in raw_mds into a single file"""
@@ -25,7 +25,7 @@ def merge_md_files():
             date=md_file.split('\\')[-1].split('_')[0]
             if date <= '2025-03-18':
                 continue
-            if any(keyword in open(md_file, 'r', encoding='utf-8').read() for keyword in ['该链接网页出现参数错误','微信，是一个生活方式']):
+            if any(keyword in open(md_file, 'r', encoding='utf-8').read() for keyword in errorkeywords):
                 continue
 
             try:
