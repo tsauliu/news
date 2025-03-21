@@ -13,16 +13,16 @@ doc.add_paragraph('')
 # Parse the summary markdown and add headings and paragraphs
 lines = summary_md.strip().split('\n')
 for line in lines:
-    if line.startswith('## '):
+    if line.startswith('##'):
         doc.add_paragraph('')
-        doc.add_paragraph(line[3:], style='summarytitle')
-    elif len(line) > 10:
-        doc.add_paragraph(line[2:].replace('*','').replace('**','').replace('- ','').replace('#',''), style='bullet')
+        doc.add_paragraph(line[2:], style='summarytitle')
+    elif len(line) > 10 and line.startswith('#'):
+        doc.add_paragraph(line.replace('*','').replace('**','').replace('- ','').replace('#',''), style='bullet')
 
 doc.add_page_break()
 doc.add_heading(f'Detailed News for Week – {friday_date}', level=1)
 doc.add_paragraph('')
-combined_md=open(f'data/2_combined_mds/{friday_date}_merged_news.md', 'r', encoding='utf-8').read()
+combined_md=open(f'data/2_combined_mds/{friday_date}_combined_news.md', 'r', encoding='utf-8').read()
 lines = combined_md.strip().split('\n')
 # Convert lines to a dataframe
 

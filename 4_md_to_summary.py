@@ -7,17 +7,18 @@ import pandas as pd
 from openai import OpenAI
 from apikey import api_key,model_id_md_to_summary
 from parameters import friday_date,errorkeywords,sector_list
+output_dir = f'data/2_combined_mds'
+os.makedirs(output_dir, exist_ok=True)
 
 def merge_md_files():
     """Merge markdown files in raw_mds into separate files by sector"""
     
     # Setup paths and find markdown files
     raw_mds_dir = f'data/1_raw_mds'
-    output_dir = f'data/2_combined_mds'
-    os.makedirs(output_dir, exist_ok=True)
+    
     
     # Create a dictionary to store content for each sector
-    sector_contents = {sector: "" for sector in sector_list}
+    sector_contents = {sector: [] for sector in sector_list}
     
     md_files = glob.glob(f'{raw_mds_dir}/{friday_date}/*.md', recursive=True)
     
@@ -30,9 +31,10 @@ def merge_md_files():
                 if any(keyword in content for keyword in errorkeywords):
                     continue
                 
-                # Extract sector and relevance from the content
+                # Extract sector, relevance, and date from the content
                 file_sector = None
                 relevant_score = 0
+                date = None
                 
                 for line in content.split('\n'):
                     if line.startswith('sector:'):
@@ -42,29 +44,46 @@ def merge_md_files():
                             relevant_score = int(line.replace('relevant:', '').strip())
                         except ValueError:
                             relevant_score = 0
+                    elif line.startswith('date:'):
+                        date = line.replace('date:', '').strip()
                 
                 # Only include files with relevant score >= 3
                 if file_sector in sector_list and relevant_score >= 3:
-                    sector_contents[file_sector] += content + "\n\n---\n\n"
+                    sector_contents[file_sector].append((date, content))
         except Exception as e:
             print(f"Error reading {md_file}: {e}")
     
-    # Write each sector's content to a separate file
+    # Write each sector's content to a separate file, sorted by date in descending order
     output_files = []
-    for sector, content in sector_contents.items():
-        if content:  # Only create files for sectors with content
+    for sector, content_list in sector_contents.items():
+        if content_list:  # Only create files for sectors with content
+            # Sort by date in descending order (newest first)
+            sorted_content = sorted(content_list, key=lambda x: x[0] if x[0] else "", reverse=True)
+            
+            # Join the sorted content
+            combined_content = "\n\n---\n\n".join([content for _, content in sorted_content])
+            
             sector_file = f'{output_dir}/{friday_date}_{sector}_merged_news.md'
             with open(sector_file, 'w', encoding='utf-8') as outfile:
-                outfile.write(content)
+                outfile.write(combined_content)
             output_files.append(sector_file)
     
     return output_files
 
 output_files=merge_md_files()
+# Create a combined summary file with all sectors in the specified order
+combined_summary_file = f'{output_dir}/{friday_date}_combined_news.md'
 
-#%%
-combined_md=open(output_files[0], 'r', encoding='utf-8').read()
-print(combined_md)
+with open(combined_summary_file, 'w', encoding='utf-8') as combined_file:
+    for sector in sector_list:
+        sector_file = next((file for file in output_files if f"_{sector}_merged_news.md" in file), None)
+        if sector_file:            
+            with open(sector_file, 'r', encoding='utf-8') as sector_content:
+                combined_file.write(sector_content.read())
+            combined_file.write("\n\n---\n\n")
+
+print(f"Combined news file created at: {combined_summary_file}")
+
 
 #%%
 client = OpenAI(
@@ -72,7 +91,7 @@ client = OpenAI(
     api_key=api_key
 )
 
-prompt=open('./prompt/auto_md_to_summary.md','r',encoding='utf-8').read()
+prompt = open('./prompt/auto_md_to_summary.md', 'r', encoding='utf-8').read()
 
 def summary(combined_md):
     completion = client.chat.completions.create(
@@ -84,18 +103,54 @@ def summary(combined_md):
     )
     return completion.choices[0].message.content
 
-md_summary=summary(combined_md)
-
-# Save the summary to a file in the summary_mds folder
+# Create summary directory
 summary_dir = f'data/3_summary_mds'
 os.makedirs(summary_dir, exist_ok=True)
 
-summary_file = os.path.join(summary_dir, f'{friday_date}_summary.md')
+#%%
+# Initialize a dictionary to store summaries by sector
+sector_summaries = {sector: None for sector in sector_list}
+
+# Process each sector file
+for output_file in output_files:
+    try:
+        # Extract sector name from filename
+        sector_name = os.path.basename(output_file).split('_')[1]
+        
+        # Read the merged content
+        with open(output_file, 'r', encoding='utf-8') as f:
+            combined_md = f.read()
+            
+        print(f"Generating summary for sector: {sector_name}")
+        
+        # Generate summary
+        md_summary = summary(combined_md)
+        
+        # Save individual sector summary
+        sector_summary_file = os.path.join(summary_dir, f'{friday_date}_{sector_name}_summary.md')
+        with open(sector_summary_file, 'w', encoding='utf-8') as f:
+            f.write(md_summary)
+        print(f"Summary saved to {sector_summary_file}")
+        
+        # Store in dictionary by sector
+        sector_summaries[sector_name] = md_summary
+        
+    except Exception as e:
+        print(f"Error processing {output_file}: {e}")
+
+#%%
+# Combine all summaries in the order defined by sector_list
+ordered_summaries = []
+for sector in sector_list:
+    if sector_summaries[sector]:
+        ordered_summaries.append(sector_summaries[sector])
+
+combined_summary = "\n\n".join(ordered_summaries)
+combined_summary_file = os.path.join(summary_dir, f'{friday_date}_summary.md')
 
 try:
-    with open(summary_file, 'w', encoding='utf-8') as f:
-        f.write(md_summary)
-    print(f"Summary saved to {summary_file}")
+    with open(combined_summary_file, 'w', encoding='utf-8') as f:
+        f.write(combined_summary)
+    print(f"Combined summary saved to {combined_summary_file}")
 except Exception as e:
-    print(f"Error saving summary: {e}")
-
+    print(f"Error saving combined summary: {e}")
