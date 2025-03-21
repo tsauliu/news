@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from openai import OpenAI
 from apikey import api_key,model_id_url_to_summary
-from parameters import friday_date
+from parameters import friday_date,errorkeywords
 
 client = OpenAI(
     base_url="https://ark.cn-beijing.volces.com/api/v3/bots",
@@ -14,21 +14,35 @@ client = OpenAI(
 prompt=open('./prompt/auto_url_to_md.md','r',encoding='utf-8').read()
 
 def summary(url):
-    completion = client.chat.completions.create(
-        model=model_id_url_to_summary,
-        messages=[
+    def get_result(url):
+        completion = client.chat.completions.create(
+            model=model_id_url_to_summary,
+            messages=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": url},
         ],
-    )
-    return completion.choices[0].message.content
+        )
+        return completion.choices[0].message.content
+
+    result=get_result(url)
+
+    # 如果返回结果包含错误关键词，则重新获取, loop 2 times
+    if any(keyword in result for keyword in errorkeywords):
+        print('result contains error keywords, retry...')
+        result=get_result(url)
+    
+    if any(keyword in result for keyword in errorkeywords):
+        print('result contains error keywords, retry...')
+        result=get_result(url)
+
+    return result
 
 urls=pd.read_csv(f'./data/0_urls/{friday_date}_article_urls.csv')
 
-#%%
 folder_path = f'./data/1_raw_mds/{friday_date}'
 os.makedirs(folder_path, exist_ok=True)
 
+#%%
 # Loop through existing MD files to check and remove irrelevant content
 for file in os.listdir(folder_path):
     if file.endswith('.md'):
@@ -38,7 +52,7 @@ for file in os.listdir(folder_path):
                 content = f.read()
                 
             # Check if the file contains irrelevant content about WeChat product updates
-            if any(keyword in content for keyword in ["微信，是一个生活方式","参数错误"]):
+            if any(keyword in content for keyword in errorkeywords):
                 os.remove(file_path)
                 print(f"Deleted irrelevant file: {file_path}")
         except Exception as e:
