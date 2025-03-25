@@ -13,72 +13,53 @@ client = OpenAI(
 
 prompt=open('./prompt/auto_url_to_md.md','r',encoding='utf-8').read()
 
-def summary(url):
-    def get_result(url):
-        completion = client.chat.completions.create(
-            model=model_id_url_to_summary,
-            messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": url},
-        ],
-        )
-        return completion.choices[0].message.content
+def summary(content):
+    completion = client.chat.completions.create(
+        model=model_id_url_to_summary,
+        messages=[
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": content},
+    ],
+    )
+    return completion.choices[0].message.content
 
-    result=get_result(url)
-
-    # 如果返回结果包含错误关键词，则重新获取, loop 2 times
-    if any(keyword in result for keyword in errorkeywords):
-        print('result contains error keywords, retry...')
-        result=get_result(url)
-    
-    if any(keyword in result for keyword in errorkeywords):
-        print('result contains error keywords, retry...')
-        result=get_result(url)
-
-    return result
-
-#%%
 urls=pd.read_csv(f'./data/1_urls/{friday_date}_article_urls.csv')
-
-folder_path = f'./data/2_raw_mds/{friday_date}'
-os.makedirs(folder_path, exist_ok=True)
-
-#%%
-# Loop through existing MD files to check and remove irrelevant content
-for file in os.listdir(folder_path):
-    if file.endswith('.md'):
-        file_path = os.path.join(folder_path, file)
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                
-            # Check if the file contains irrelevant content about WeChat product updates
-            if any(keyword in content for keyword in errorkeywords):
-                os.remove(file_path)
-                print(f"Deleted irrelevant file: {file_path}")
-        except Exception as e:
-            print(f"Error processing file {file_path}: {e}")
-
-#%%
-import concurrent.futures
-import time
+mdraw_path=f'./data/2_raw_mds/{friday_date}'
+md_summary_path=f'./data/3_article_summary/{friday_date}'
+os.makedirs(md_summary_path, exist_ok=True)
 
 def process_url(row):
     safe_title = ''.join(c if c.isalnum() else '_' for c in row['title'])
-    filename = f"{folder_path}/{row['publish_time'].split()[0]}_{row['mp_name']}_{safe_title[:30]}.md"
+    filename = f"{md_summary_path}/{row['publish_time'].split()[0]}_{row['mp_name']}_{safe_title[:30]}.md"
+    url=row['url']
+
+    contentpath=f'{mdraw_path}/{url.split("/")[-1]}.md'
+    
+    if not os.path.exists(contentpath):
+        return f"Error: {row['url']} - {contentpath} not found"
+    
+    content=open(contentpath,'r',encoding='utf-8').read()
+    
+    date=pd.to_datetime(row['publish_time']).strftime('%Y年%m月%d日')
+    mp_name=row['mp_name']
     print(filename)
     
     if os.path.exists(filename):
         return
     
     try:
-        content = summary(row['url'])
+        content = summary(content)
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(content)
+            f.write(f'\ndate: {date}\n')
+            f.write(f'author: {mp_name}\n')
+            f.write(f'link: {url}\n')
         return f"Processed: {row['url']}"
     except Exception as e:
         return f"Error: {row['url']} - {e}"
 
+import concurrent.futures
+import time
 # Use ThreadPoolExecutor to process URLs in parallel
 max_workers = 5  # Adjust based on your system capabilities and API rate limits
 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
