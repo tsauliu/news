@@ -38,9 +38,9 @@ def summary(url):
     return result
 
 #%%
-urls=pd.read_csv(f'./data/0_urls/{friday_date}_article_urls.csv')
+urls=pd.read_csv(f'./data/1_urls/{friday_date}_article_urls.csv')
 
-folder_path = f'./data/1_raw_mds/{friday_date}'
+folder_path = f'./data/2_raw_mds/{friday_date}'
 os.makedirs(folder_path, exist_ok=True)
 
 #%%

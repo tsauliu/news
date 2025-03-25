@@ -21,7 +21,7 @@ article_clean.sort_values(by='publish_time', ascending=False, inplace=True)
 article_clean = article_clean[pd.to_datetime(article_clean['publish_time']) >= (pd.to_datetime(friday_date) - pd.Timedelta(days=news_start))]
 
 
-folder_path = f'data/0_urls/'
+folder_path = f'data/1_urls/'
 os.makedirs(folder_path, exist_ok=True)
 
 # Get current date for the filename

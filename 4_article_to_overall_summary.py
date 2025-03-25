@@ -14,7 +14,7 @@ def merge_md_files():
     """Merge markdown files in raw_mds into separate files by sector"""
     
     # Setup paths and find markdown files
-    raw_mds_dir = f'data/1_raw_mds'
+    raw_mds_dir = f'data/2_raw_mds'
     
     
     # Create a dictionary to store content for each sector
