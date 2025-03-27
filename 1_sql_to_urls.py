@@ -26,3 +26,5 @@ os.makedirs(folder_path, exist_ok=True)
 
 # Get current date for the filename
 article_clean[['publish_time','mp_name','title', 'url']].to_csv(os.path.join(folder_path, f'{friday_date}_article_urls.csv'), index=False)
+
+print(f'{friday_date}_article_urls.csv saved')

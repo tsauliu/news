@@ -68,3 +68,4 @@ for _, row in urls.iterrows():
 
 # Clean up
 driver.quit()
+print(f'{friday_date} articles saved')
