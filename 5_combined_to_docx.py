@@ -6,7 +6,7 @@ import datetime
 from parameters import friday_date,sector_list
 
 doc = Document('news_template.docx')
-summary_md=open(f'data/3_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
+summary_md=open(f'data/5_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
 ## add the key takeaway for the week
 doc.add_heading(f'Key takeaway for Week – {friday_date}', level=1)
 doc.add_paragraph('')
@@ -22,7 +22,7 @@ for line in lines:
 doc.add_page_break()
 doc.add_heading(f'Detailed News for Week – {friday_date}', level=1)
 doc.add_paragraph('')
-combined_md=open(f'data/2_combined_mds/{friday_date}_combined_news.md', 'r', encoding='utf-8').read()
+combined_md=open(f'data/4_combined_mds/{friday_date}_combined_news.md', 'r', encoding='utf-8').read()
 lines = combined_md.strip().split('\n')
 # Convert lines to a dataframe
 

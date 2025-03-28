@@ -33,6 +33,17 @@ def scrape_url_to_md(url, output_dir, title):
     filename = f"{url_id}.md"
     output_path = os.path.join(output_dir, filename)
     
+    # Check if the file already exists and contains error message
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                if "完成验证后即可继续访问" in content:
+                    print(f"File contains error message, deleting: {output_path}")
+                    os.remove(output_path)
+        except Exception as e:
+            print(f"Error checking existing file {output_path}: {str(e)}")
+
     # Skip if file already exists
     if os.path.exists(output_path):
         print(f"File already exists: {output_path}, skipping...")
@@ -50,6 +61,10 @@ def scrape_url_to_md(url, output_dir, title):
         text_content = soup.get_text()
         # Replace 3 or more newlines with 2 newlines
         text_content = re.sub(r'\n{3,}', '\n\n', text_content)
+
+        if "完成验证后即可继续访问" in text_content:
+            print(f"File contains error message, deleting: {output_path}")
+            return
         
         # Save the text content to a markdown file
         with open(output_path, 'w', encoding='utf-8') as f:

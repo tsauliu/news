@@ -7,14 +7,14 @@ import pandas as pd
 from openai import OpenAI
 from apikey import api_key,model_id_md_to_summary
 from parameters import friday_date,errorkeywords,sector_list
-output_dir = f'data/2_combined_mds'
+output_dir = f'data/4_combined_mds'
 os.makedirs(output_dir, exist_ok=True)
 
 def merge_md_files():
     """Merge markdown files in raw_mds into separate files by sector"""
     
     # Setup paths and find markdown files
-    raw_mds_dir = f'data/2_raw_mds'
+    raw_mds_dir = f'data/3_article_summary'
     
     
     # Create a dictionary to store content for each sector
@@ -104,7 +104,7 @@ def summary(combined_md):
     return completion.choices[0].message.content
 
 # Create summary directory
-summary_dir = f'data/3_summary_mds'
+summary_dir = f'data/5_summary_mds'
 os.makedirs(summary_dir, exist_ok=True)
 
 #%%
