@@ -4,6 +4,7 @@ before run,plz set up the chrome driver, with instructions in ./crawler
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 import pandas as pd
 from bs4 import BeautifulSoup
 import os
@@ -19,12 +20,22 @@ folder_path = f'./data/2_raw_mds/{friday_date}'
 os.makedirs(folder_path, exist_ok=True)
 
 chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument('--ignore-certificate-errors')
-service = Service(f'/home/ubuntu/chromedriver-linux64/chromedriver')
-driver = webdriver.Chrome(service=service, options=chrome_options)
+
+test=False
+
+if test:
+    driver = webdriver.Remote(
+        command_executor='http://localhost:4444',
+        options=chrome_options
+    )
+else:
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument('--ignore-certificate-errors')
+    service = Service(f'/home/ubuntu/chromedriver-linux64/chromedriver')
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+
 
 def scrape_url_to_md(url, output_dir, title):
     # Generate a filename from the title
@@ -52,26 +63,25 @@ def scrape_url_to_md(url, output_dir, title):
     try:
         # Visit the webpage
         driver.get(url)
-        page_source = driver.page_source
         
-        # Parse with BeautifulSoup
+        page_source = driver.page_source        
         soup = BeautifulSoup(page_source, 'html.parser')
-        
-        # Get text content and clean up multiple line breaks
         text_content = soup.get_text()
-        # Replace 3 or more newlines with 2 newlines
-        text_content = re.sub(r'\n{3,}', '\n\n', text_content)
-
-        if "完成验证后即可继续访问" in text_content:
-            print(f"File contains error message, deleting: {output_path}")
-            return
         
-        # Save the text content to a markdown file
+        if "完成验证后即可继续访问" in text_content:
+            button = driver.find_element(By.ID, 'js_verify')
+            button.click()
+            sleep(3)
+
+        page_source = driver.page_source
+        soup = BeautifulSoup(page_source, 'html.parser')
+        text_content = soup.get_text()
+        text_content = re.sub(r'\n{3,}', '\n\n', text_content)
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(text_content)
         
+        sleep(5)        
         print(f"Successfully saved {url} to {output_path}")
-        sleep(1)
     except Exception as e:
         print(f"Error processing {url}: {str(e)}")
 

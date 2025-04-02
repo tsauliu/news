@@ -6,3 +6,4 @@ docker-compose.yml
 pyenv.sh
 *.docx
 todo.md
+test
