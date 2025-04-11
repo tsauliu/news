@@ -9,15 +9,18 @@ doc = Document('news_template.docx')
 summary_md=open(f'data/5_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
 ## add the key takeaway for the week
 doc.add_heading(f'Key takeaway for Week – {friday_date}', level=1)
-doc.add_paragraph('')
+# doc.add_paragraph('')
 # Parse the summary markdown and add headings and paragraphs
 lines = summary_md.strip().split('\n')
 for line in lines:
     if line.startswith('##'):
         doc.add_paragraph('')
-        doc.add_paragraph(line[2:], style='summarytitle')
+        doc.add_paragraph(line[2:].replace(' ',''), style='summarytitle')
     elif len(line) > 10 and line.startswith('#'):
-        doc.add_paragraph(line.replace('*','').replace('**','').replace('- ','').replace('#',''), style='bullet')
+        doc.add_paragraph(line.replace('*','').replace('**','').replace('- ','').replace('#','').replace(' ',''), style='bullet')
+
+doc.add_page_break()
+doc.add_heading(f'Table of Contents', level=1)
 
 doc.add_page_break()
 doc.add_heading(f'Detailed News for Week – {friday_date}', level=1)
