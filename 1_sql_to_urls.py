@@ -16,22 +16,20 @@ import shutil
 # read the remote database file
 local_db_path = 'data/wechat_articles.db'
 
-# try:
-#     remote_db_url = "http://118.193.44.18:8000/data/wechat_articles.db"
-#     os.makedirs('data', exist_ok=True)
-#     download_file(remote_db_url, local_db_path)
-# except Exception as e:
-#     print(f"Error downloading remote database file: {e}")
+try:
+    remote_db_url = "http://118.193.44.18:8000/data/wechat_articles.db"
+    os.makedirs('data', exist_ok=True)
+    download_file(remote_db_url, local_db_path)
+except Exception as e:
+    print(f"Error downloading remote database file: {e}")
 
-# conn_wechat = sqlite3.connect(local_db_path)
-# wechat_articles = pd.read_sql_query("SELECT * FROM articles", conn_wechat)
-# conn_wechat.close()
-# wechat_articles['pub_time']=pd.to_datetime(wechat_articles['pub_time'],format='%Y年%m月%d日 %H:%M').dt.strftime('%Y-%m-%d %H:%M:%S')
-# wechat_articles['source'] = 'wechat'
-# wechat_articles.rename(columns={'pub_time':'publish_time','article_title':'title','channel_scraped':'mp_name'}, inplace=True)
-# wechat_articles=wechat_articles[['mp_name', 'title', 'url', 'publish_time','source']].sort_values(by='publish_time', ascending=False)
-
-wechat_articles=pd.DataFrame(columns=['mp_name', 'title', 'url', 'publish_time','source'])
+conn_wechat = sqlite3.connect(local_db_path)
+wechat_articles = pd.read_sql_query("SELECT * FROM articles", conn_wechat)
+conn_wechat.close()
+wechat_articles['pub_time']=pd.to_datetime(wechat_articles['pub_time'],format='%Y年%m月%d日 %H:%M').dt.strftime('%Y-%m-%d %H:%M:%S')
+wechat_articles['source'] = 'wechat'
+wechat_articles.rename(columns={'pub_time':'publish_time','article_title':'title','channel_scraped':'mp_name'}, inplace=True)
+wechat_articles=wechat_articles[['mp_name', 'title', 'url', 'publish_time','source']].sort_values(by='publish_time', ascending=False)
 
 # read the local database file
 conn = sqlite3.connect('data/wewe-rss.db')
