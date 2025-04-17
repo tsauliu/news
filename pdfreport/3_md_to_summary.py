@@ -3,7 +3,7 @@ import sys,os
 sys.path.append(os.path.abspath(".."))
 from parameters import friday_date
 import os
-from models import deepseek_model,count_tokens
+from models import deepseek_model,count_tokens,gemini_model
 
 raw_path=f'./03 cleaned_markdown/{friday_date}'
 output_path=f'./04 summary/{friday_date}'
@@ -17,6 +17,7 @@ for file in os.listdir(raw_path):
         content = f.read()
     prompt = open('prompt.txt','r').read()
     print('total tokens:',count_tokens(prompt+'\n -- \n'+content))
-    summary = deepseek_model(prompt,content)
+    # summary = deepseek_model(prompt,content)
+    summary = gemini_model(prompt,content)
     with open(os.path.join(output_path, file), 'w') as f:
         f.write(summary)
