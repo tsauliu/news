@@ -2,12 +2,34 @@
 # %%
 from docx import Document
 import pandas as pd
-import datetime
+import datetime,os
 from parameters import friday_date,sector_list
 
 doc = Document('news_template.docx')
+
+# research reports for the week
+doc.add_heading(f'Sellside highlights for Week – {friday_date}', level=1)
+
+
+raw_path=f'./pdfreport/01 raw/{friday_date}'
+
+for file in os.listdir(raw_path):
+    if file.endswith('.pdf'):
+        ds_summary=open(f'./pdfreport/04 summary/{friday_date}_ds/{file.replace('.pdf', '.md')}', 'r', encoding='utf-8').read()
+        gemini_summary=open(f'./pdfreport/04 summary/{friday_date}_gemini/{file.replace('.pdf', '.md')}', 'r', encoding='utf-8').read()
+        for summary in [ds_summary,gemini_summary]:
+            lines = summary.strip().split('\n')
+            for line in lines:
+                if line.startswith('**'):
+                    doc.add_paragraph('')
+                    doc.add_paragraph(line.replace('**',''), style='summarytitle')
+                elif len(line) > 10:
+                    doc.add_paragraph(line.replace('*','').replace('**','').replace('- ','').replace('#','').replace(' ',''), style='bullet')
+
+doc.save(f'data/{friday_date}_weekly_news.docx')
+# %% add the key takeaway for the week
 summary_md=open(f'data/5_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
-## add the key takeaway for the week
+
 doc.add_heading(f'Key takeaway for Week – {friday_date}', level=1)
 # doc.add_paragraph('')
 # Parse the summary markdown and add headings and paragraphs
@@ -20,15 +42,16 @@ for line in lines:
         doc.add_paragraph(line.replace('*','').replace('**','').replace('- ','').replace('#','').replace(' ',''), style='bullet')
 
 doc.add_page_break()
-doc.add_heading(f'Table of Contents', level=1)
 
+#%% add the detailed news for the week
+doc.add_heading(f'Table of Contents', level=1)
 doc.add_page_break()
 doc.add_heading(f'Detailed News for Week – {friday_date}', level=1)
 doc.add_paragraph('')
 combined_md=open(f'data/4_combined_mds/{friday_date}_combined_news.md', 'r', encoding='utf-8').read()
 lines = combined_md.strip().split('\n')
-# Convert lines to a dataframe
 
+# Convert lines to a dataframe
 news_data = []
 
 for line in lines:
