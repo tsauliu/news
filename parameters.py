@@ -12,11 +12,14 @@ sector_list=['商业落地','核心技术','政策监管','企业战略','硬件
 
 
 def download_file(url, local_path):        # Download the database file
-    print(f"Downloading database from {url}...")
-    response = requests.get(url, stream=True)
-    if response.status_code == 200:
-        with open(local_path, 'wb') as f:
-            shutil.copyfileobj(response.raw, f)
-        print(f"Database successfully downloaded to {local_path}")
-    else:
-        print(f"Failed to download database. Status code: {response.status_code}")
+    try:
+        print(f"Downloading file from {url}...")
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            with open(local_path, 'wb') as f:
+                shutil.copyfileobj(response.raw, f)
+                print(f"File successfully downloaded to {local_path}")
+        else:
+            print(f"Failed to download file. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"Error downloading file: {e}")
