@@ -12,13 +12,6 @@ from parameters import friday_date
 from time import sleep
 import re
 
-# Read URLs from CSV
-urls = pd.read_csv(f'./data/1_urls/{friday_date}_article_urls.csv')
-
-# Set up output folder
-folder_path = f'./data/2_raw_mds/{friday_date}'
-os.makedirs(folder_path, exist_ok=True)
-
 chrome_options = Options()
 
 test=False
@@ -33,17 +26,11 @@ else:
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument('--ignore-certificate-errors')
-    service = Service(f'/home/ubuntu/chromedriver-linux64/chromedriver')
+    service = Service(f'/home/caoliu/chromedriver-linux64/chromedriver')
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
 
-def scrape_url_to_md(url, output_dir, title):
-    # Generate a filename from the title
-    # Extract the URL ID from the URL (the part after the last slash)
-    url_id = url.split('/')[-1]
-    filename = f"{url_id}.md"
-    output_path = os.path.join(output_dir, filename)
-    
+def scrape_url_to_md(url,output_path):    
     # Check if the file already exists and contains error message
     if os.path.exists(output_path):
         try:
@@ -84,13 +71,3 @@ def scrape_url_to_md(url, output_dir, title):
         print(f"Successfully saved {url} to {output_path}")
     except Exception as e:
         print(f"Error processing {url}: {str(e)}")
-
-# Process each URL
-for _, row in urls.iterrows():
-    url = row['url']  # Adjust column name if different
-    title = row['title']  # Make sure 'title' column exists in your CSV
-    scrape_url_to_md(url, folder_path, title)
-
-# Clean up
-driver.quit()
-print(f'{friday_date} articles saved')

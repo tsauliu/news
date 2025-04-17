@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from openai import OpenAI
 from apikey import api_key,model_id_url_to_summary
-from parameters import friday_date,errorkeywords
+from parameters import friday_date,errorkeywords,get_filename
 
 client = OpenAI(
     base_url="https://ark.cn-beijing.volces.com/api/v3/bots",
@@ -32,8 +32,10 @@ def process_url(row):
     safe_title = ''.join(c if c.isalnum() else '_' for c in row['title'])
     filename = f"{md_summary_path}/{row['publish_time'].split()[0]}_{row['mp_name']}_{safe_title[:30]}.md"
     url=row['url']
+    source=row['source']
 
-    contentpath=f'{mdraw_path}/{url.split("/")[-1]}.md'
+    rawfilename=get_filename(url,source)
+    contentpath=f'{mdraw_path}/{rawfilename}.md'
     
     if not os.path.exists(contentpath):
         return f"Error: {row['url']} - {contentpath} not found"

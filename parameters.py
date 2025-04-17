@@ -23,3 +23,11 @@ def download_file(url, local_path):        # Download the database file
             print(f"Failed to download file. Status code: {response.status_code}")
     except Exception as e:
         print(f"Error downloading file: {e}")
+
+def get_filename(url,source):
+    if source == 'wechat':
+        return url.split('/')[-1]
+    elif source == 'rss':
+        return url.split('sn=')[-1].replace('=','').replace('&','')
+    else:
+        return url.split('/')[-1]
