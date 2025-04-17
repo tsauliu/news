@@ -8,3 +8,11 @@ pyenv.sh
 todo.md
 test
 *.opml
+*.zip
+*.pdf
+*.md
+*.txt
+*.csv
+*.json
+*.html
+*.xml

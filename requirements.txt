@@ -6,3 +6,6 @@ selenium
 beautifulsoup4
 requests
 feedparser
+markitdown[all]
+tiktoken
+google-genai
