@@ -2,26 +2,10 @@
 #%%
 import os
 import pandas as pd
-from openai import OpenAI
-from apikey import api_key,model_id_url_to_summary
+from models import deepseek_model
 from parameters import friday_date,errorkeywords,get_filename
 
-client = OpenAI(
-    base_url="https://ark.cn-beijing.volces.com/api/v3/bots",
-    api_key=api_key
-)
-
 prompt=open('./prompt/auto_url_to_md.md','r',encoding='utf-8').read()
-
-def summary(content):
-    completion = client.chat.completions.create(
-        model=model_id_url_to_summary,
-        messages=[
-        {"role": "system", "content": prompt},
-        {"role": "user", "content": content},
-    ],
-    )
-    return completion.choices[0].message.content
 
 urls=pd.read_csv(f'./data/1_urls/{friday_date}_article_urls.csv')
 mdraw_path=f'./data/2_raw_mds/{friday_date}'
@@ -50,7 +34,7 @@ def process_url(row):
         return
     
     try:
-        content = summary(content)
+        content = deepseek_model(prompt,content)
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(content)
             f.write(f'\ndate: {date}\n')

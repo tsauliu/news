@@ -4,8 +4,7 @@ import os
 import glob
 from datetime import datetime
 import pandas as pd
-from openai import OpenAI
-from apikey import api_key,model_id_md_to_summary
+from models import deepseek_model,gemini_model
 from parameters import friday_date,errorkeywords,sector_list
 output_dir = f'data/4_combined_mds'
 os.makedirs(output_dir, exist_ok=True)
@@ -84,24 +83,7 @@ with open(combined_summary_file, 'w', encoding='utf-8') as combined_file:
 
 print(f"Combined news file created at: {combined_summary_file}")
 
-
-#%%
-client = OpenAI(
-    base_url="https://ark.cn-beijing.volces.com/api/v3/bots",
-    api_key=api_key
-)
-
 prompt = open('./prompt/auto_md_to_summary.md', 'r', encoding='utf-8').read()
-
-def summary(combined_md):
-    completion = client.chat.completions.create(
-        model=model_id_md_to_summary,
-        messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": combined_md},
-        ],
-    )
-    return completion.choices[0].message.content
 
 # Create summary directory
 summary_dir = f'data/5_summary_mds'
@@ -124,7 +106,7 @@ for output_file in output_files:
         print(f"Generating summary for sector: {sector_name}")
         
         # Generate summary
-        md_summary = summary(combined_md)
+        md_summary = gemini_model(prompt,combined_md)
         
         # Save individual sector summary
         sector_summary_file = os.path.join(summary_dir, f'{friday_date}_{sector_name}_summary.md')
