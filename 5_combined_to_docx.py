@@ -24,7 +24,7 @@ for file in os.listdir(raw_path):
                     doc.add_paragraph('')
                     doc.add_paragraph(line.replace('**',''), style='summarytitle')
                 elif len(line) > 10:
-                    doc.add_paragraph(line.replace('*','').replace('**','').replace('- ','').replace('#','').replace(' ',''), style='bullet')
+                    doc.add_paragraph(line.replace('*','').replace('**','').replace('- ','').replace('#','').strip(), style='bullet')
 
 doc.save(f'data/{friday_date}_weekly_news.docx')
 # %% add the key takeaway for the week
