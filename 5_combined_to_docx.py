@@ -39,13 +39,16 @@ for file in sorted(os.listdir(raw_path), key=lambda x: x.split('-')[0:3] if '-' 
             source_path = os.path.join(raw_path, file)
             destination_path = os.path.join(cdn_path, new_filename)
             shutil.copy2(source_path, destination_path)
+            # doc.add_paragraph(f'', style='link')
             doc.add_paragraph(f'https://auto.bda-news.com/{friday_date}/{file_id}.pdf', style='link')
             
-doc.save(f'data/{friday_date}_weekly_news.docx')
+
 # %% add the key takeaway for the week
+
+doc.add_page_break()
 summary_md=open(f'data/5_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
 
-doc.add_heading(f'Key takeaway for Week – {friday_date}', level=1)
+doc.add_heading(f'Key News takeaway for Week – {friday_date}', level=1)
 # doc.add_paragraph('')
 # Parse the summary markdown and add headings and paragraphs
 lines = summary_md.strip().split('\n')

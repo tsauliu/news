@@ -64,3 +64,4 @@ os.makedirs(folder_path, exist_ok=True)
 article_clean[['publish_time','mp_name','title', 'url','source']].to_csv(os.path.join(folder_path, f'{friday_date}_article_urls.csv'), index=False)
 
 print(f'{friday_date}_article_urls.csv saved')
+print(f'{len(article_clean)} articles saved')

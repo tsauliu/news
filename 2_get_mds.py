@@ -11,6 +11,7 @@ urls = pd.read_csv(f'./data/1_urls/{friday_date}_article_urls.csv')
 local_folder_path = f'./data/2_raw_mds/{friday_date}'
 os.makedirs(local_folder_path, exist_ok=True)
 
+print(f"Processing {len(urls)} URLs")
 # Process each URL
 for _, row in urls.iterrows():
     # Copy file from remote server
@@ -34,3 +35,4 @@ for _, row in urls.iterrows():
         # print(output_path)
         scrape_url_to_md(row['url'], output_path)
 driver.quit()
+print(f"Processed {len(urls)} URLs")
