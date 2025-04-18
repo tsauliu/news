@@ -67,10 +67,14 @@ if __name__ == "__main__":
 
     # Print the resulting DataFrame (or its info/head)
     if not articles_df.empty:
+        articles_df['published'] = pd.to_datetime(articles_df['published'], errors='coerce')
+        articles_df = articles_df.sort_values(by='published', ascending=False)
+
         print("\n--- Articles DataFrame ---")
         print(articles_df.info())
         print("\n--- First 5 Articles ---")
         print(articles_df.head())
+                
         articles_df.to_csv('./data/rss_articles.csv', index=False)
     else:
         print("\nNo articles collected.")
