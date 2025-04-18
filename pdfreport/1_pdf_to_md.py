@@ -12,8 +12,11 @@ os.makedirs(output_path, exist_ok=True)
 md = MarkItDown(enable_plugins=False) # Set to True to enable plugins
 
 for file in os.listdir(raw_path):
+    output_file = os.path.join(output_path, file.replace('.pdf', '.md'))
+    if os.path.exists(output_file):
+        continue
     print(file)
     result = md.convert(os.path.join(raw_path, file))
-    with open(os.path.join(output_path, file.replace('.pdf', '.md')), 'w') as f:
+    with open(output_file, 'w') as f:
         f.write(file+'\n\n')
         f.write(result.text_content)

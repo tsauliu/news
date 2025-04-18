@@ -13,6 +13,10 @@ os.makedirs(output_path_gemini, exist_ok=True)
 os.makedirs(raw_path, exist_ok=True)
 
 for file in os.listdir(raw_path):
+    output_file = os.path.join(output_path_gemini, file)
+    if os.path.exists(output_file):
+        continue
+
     print(file)
     with open(os.path.join(raw_path, file), 'r') as f:
         content = f.read()

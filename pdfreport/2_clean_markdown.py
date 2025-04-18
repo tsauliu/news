@@ -10,12 +10,16 @@ os.makedirs(output_path, exist_ok=True)
 os.makedirs(raw_path, exist_ok=True)
 
 for file in os.listdir(raw_path):
+    output_file = os.path.join(output_path, file)
+    if os.path.exists(output_file):
+        continue
+
     with open(os.path.join(raw_path, file), 'r') as f:
         content = f.read()
     # Find lines with "Disclosures" but not "see"
     lines = content.split('\n')
     print(file)
-    with open(os.path.join(output_path, file), 'w') as f:
+    with open(output_file, 'w') as f:
         for line in lines:
             if "disclosures" in line.lower() and "see" not in line.lower():
                 f.write(line + '\n')

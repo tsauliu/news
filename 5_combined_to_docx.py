@@ -4,17 +4,23 @@ from docx import Document
 import pandas as pd
 import datetime,os
 from parameters import friday_date,sector_list
+import shutil
+
 
 doc = Document('news_template.docx')
 
 # research reports for the week
 doc.add_heading(f'Sellside highlights for Week – {friday_date}', level=1)
 
-
 raw_path=f'./pdfreport/01 raw/{friday_date}'
+cdn_path=f'./pdfreport/cdn/{friday_date}'
 
-for file in os.listdir(raw_path):
+os.makedirs(cdn_path, exist_ok=True)
+
+# Sort files by date in filename (yyyy-mm-dd format)
+for file in sorted(os.listdir(raw_path), key=lambda x: x.split('-')[0:3] if '-' in x else x, reverse=True):
     if file.endswith('.pdf'):
+        print(file)
         ds_summary=open(f'./pdfreport/04 summary/{friday_date}_ds/{file.replace('.pdf', '.md')}', 'r', encoding='utf-8').read()
         gemini_summary=open(f'./pdfreport/04 summary/{friday_date}_gemini/{file.replace('.pdf', '.md')}', 'r', encoding='utf-8').read()
         for summary in [ds_summary,gemini_summary]:
@@ -22,10 +28,19 @@ for file in os.listdir(raw_path):
             for line in lines:
                 if line.startswith('**'):
                     doc.add_paragraph('')
-                    doc.add_paragraph(line.replace('**',''), style='summarytitle')
+                    doc.add_paragraph(line.replace('**','').strip(), style='summarytitle')
                 elif len(line) > 10:
                     doc.add_paragraph(line.replace('*','').replace('**','').replace('- ','').replace('#','').strip(), style='bullet')
-
+        
+        parts = file.split('-')
+        if len(parts) > 1:
+            file_id = parts[-1].replace('.pdf', '')
+            new_filename = f"{file_id}.pdf"
+            source_path = os.path.join(raw_path, file)
+            destination_path = os.path.join(cdn_path, new_filename)
+            shutil.copy2(source_path, destination_path)
+            doc.add_paragraph(f'https://auto.bda-news.com/{friday_date}/{file_id}.pdf', style='link')
+            
 doc.save(f'data/{friday_date}_weekly_news.docx')
 # %% add the key takeaway for the week
 summary_md=open(f'data/5_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
