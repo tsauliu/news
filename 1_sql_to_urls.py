@@ -52,8 +52,8 @@ rss_articles['publish_time'] = pd.to_datetime(rss_articles['published']).dt.strf
 rss_articles['url'] = rss_articles['link']
 rss_articles['mp_name'] = rss_articles['source_name']
 rss_articles = rss_articles[['mp_name', 'title', 'url', 'publish_time','source']].sort_values(by='publish_time', ascending=False)
-rss_articles = rss_articles[~rss_articles['title'].isin(titles)]
-article_clean = pd.concat([article_clean, rss_articles]).drop_duplicates(subset=['title'])
+c1=~rss_articles['title'].isin(titles)
+article_clean = pd.concat([article_clean, rss_articles[c1]]).drop_duplicates(subset=['title'])
 
 
 # save the article_clean to csv

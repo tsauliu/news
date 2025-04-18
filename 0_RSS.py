@@ -75,6 +75,26 @@ if __name__ == "__main__":
         print("\n--- First 5 Articles ---")
         print(articles_df.head())
                 
-        articles_df.to_csv('./data/rss_articles.csv', index=False)
+        # Check if the output file already exists
+        output_file = './data/rss_articles.csv'
+        if os.path.exists(output_file):
+            # Read existing data
+            existing_df = pd.read_csv(output_file)
+            # Convert published to datetime for proper comparison
+            existing_df['published'] = pd.to_datetime(existing_df['published'], errors='coerce')
+            
+            # Combine existing and new data
+            combined_df = pd.concat([existing_df, articles_df])
+            # Remove duplicates based on title and link
+            combined_df = combined_df.drop_duplicates(subset=['title', 'link'], keep='first')
+            # Sort by published date
+            combined_df = combined_df.sort_values(by='published', ascending=False)
+            
+            print(f"Added {len(combined_df) - len(existing_df)} new articles to existing {len(existing_df)} articles.")
+            combined_df.to_csv(output_file, index=False)
+        else:
+            # If file doesn't exist, just save the current data
+            articles_df.to_csv(output_file, index=False)
+            print(f"Created new file with {len(articles_df)} articles.")
     else:
         print("\nNo articles collected.")
