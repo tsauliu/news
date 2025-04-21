@@ -57,11 +57,13 @@ article_clean = pd.concat([article_clean, rss_articles[c1]]).drop_duplicates(sub
 
 
 # save the article_clean to csv
-article_clean = article_clean[pd.to_datetime(article_clean['publish_time']) >= (pd.to_datetime(friday_date) - pd.Timedelta(days=news_start))].sort_values(by='publish_time', ascending=False)
+article_recent = article_clean[pd.to_datetime(article_clean['publish_time']) >= (pd.to_datetime(friday_date) - pd.Timedelta(days=news_start))].sort_values(by='publish_time', ascending=False)
 folder_path = f'data/1_urls/'
 os.makedirs(folder_path, exist_ok=True)
 
-article_clean[['publish_time','mp_name','title', 'url','source']].to_csv(os.path.join(folder_path, f'{friday_date}_article_urls.csv'), index=False)
+article_recent[['publish_time','mp_name','title', 'url','source']].to_csv(os.path.join(folder_path, f'{friday_date}_article_urls.csv'), index=False)
+article_clean.sort_values(by='publish_time', ascending=False)[['publish_time','mp_name','title', 'url','source']].to_excel(os.path.join(folder_path, f'article_urls.xlsx'), index=False)
+
 
 print(f'{friday_date}_article_urls.csv saved')
 print(f'{len(article_clean)} articles saved')
