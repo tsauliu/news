@@ -14,7 +14,7 @@ import re
 
 chrome_options = Options()
 
-test=False
+test=True
 
 if test:
     driver = webdriver.Remote(
@@ -56,6 +56,7 @@ def scrape_url_to_md(url,output_path):
         text_content = soup.get_text()
         
         if "完成验证后即可继续访问" in text_content:
+            sleep(3) 
             button = driver.find_element(By.ID, 'js_verify')
             button.click()
             sleep(3)
@@ -64,10 +65,17 @@ def scrape_url_to_md(url,output_path):
         soup = BeautifulSoup(page_source, 'html.parser')
         text_content = soup.get_text()
         text_content = re.sub(r'\n{3,}', '\n\n', text_content)
+        if "完成验证后即可继续访问" in text_content:
+            print(f"Error message found in {url}, skipping...")
+            return
+        
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(text_content)
         
-        sleep(5)        
+        sleep(10)        
         print(f"Successfully saved {url} to {output_path}")
     except Exception as e:
         print(f"Error processing {url}: {str(e)}")
+
+if __name__ == "__main__":
+    scrape_url_to_md('https://mp.weixin.qq.com/s?__biz=Mzg2NzUxNTU1OA==&mid=2247662414&idx=4&sn=001a5ff87f3aae7e23b110a776928904&subscene=0,rss', 'test.md')

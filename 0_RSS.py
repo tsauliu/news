@@ -3,6 +3,12 @@ import feedparser
 import os
 import pandas as pd
 import xml.etree.ElementTree as ET # Import ElementTree for XML parsing
+from parameters import friday_date,get_filename
+from bs4 import BeautifulSoup
+
+# Set up output folder
+local_folder_path = f'./data/2_raw_mds/{friday_date}'
+os.makedirs(local_folder_path, exist_ok=True)
 
 def read_opml_feeds_to_df(opml_file='rss_source.opml'):
     """Reads RSS feed URLs and names from an OPML file, parses feeds, and returns articles as a Pandas DataFrame."""
@@ -42,23 +48,40 @@ def read_opml_feeds_to_df(opml_file='rss_source.opml'):
         url = source_info['url']
         source_name = source_info['name']
         print(f"  Fetching feed: {source_name} ({url})") # Log which source is being processed
-        try:
-            feed = feedparser.parse(url)
-            if feed.bozo:
-                print(f"    Warning: Potential issue parsing feed {url}. Reason: {feed.bozo_exception}")
+        # try:
+        feed = feedparser.parse(url)
+        if feed.bozo:
+            print(f"    Warning: Potential issue parsing feed {url}. Reason: {feed.bozo_exception}")
 
-            for entry in feed.entries:
-                articles_list.append({
-                    'source_name': source_name, # Add the source name
-                    'published': entry.get('published'),
-                    'title': entry.get('title'),
-                    'link': entry.get('link'),
-                })
-        except Exception as e:
-            print(f"    Error processing feed {url}: {e}")
+        for entry in feed.entries:
+            articles_list.append({
+                'source_name': source_name, # Add the source name
+                'published': entry.get('published'),
+                'title': entry.get('title'),
+                'link': entry.get('link')
+            })
+
+            content=entry.get('content')[0]['value']
+            soup = BeautifulSoup(content, 'html.parser')
+            text_content = soup.get_text()
+            filename = f'{get_filename(entry.get('link'),'rss')}.md'
+            output_path = os.path.join(local_folder_path, filename)
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(text_content)
+
+        # except Exception as e:
+        #     print(f"    Error processing feed {url}: {e}")
 
     print(f"Finished processing. Extracted {len(articles_list)} articles.")
     return pd.DataFrame(articles_list)
+
+
+# if __name__ == "__main__":
+#      url='https://wechat2rss.cyber-icewinddale.cc/feed/3867515558.xml'
+#      feed = feedparser.parse(url)
+#      soup = BeautifulSoup(feed.entries[0].get('content')[0]['value'], 'html.parser')
+#      text_content = soup.get_text()
+#      print(text_content)
 
 if __name__ == "__main__":
     opml_filename = 'rss_source.opml'
