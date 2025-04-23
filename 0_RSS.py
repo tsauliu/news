@@ -60,14 +60,16 @@ def read_opml_feeds_to_df(opml_file='rss_source.opml'):
                 'title': entry.get('title'),
                 'link': entry.get('link')
             })
-
-            content=entry.get('content')[0]['value']
-            soup = BeautifulSoup(content, 'html.parser')
-            text_content = soup.get_text()
-            filename = f'{get_filename(entry.get('link'),'rss')}.md'
-            output_path = os.path.join(local_folder_path, filename)
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write(text_content)
+            try:
+                content=entry.get('content')[0]['value']
+                soup = BeautifulSoup(content, 'html.parser')
+                text_content = soup.get_text()
+                filename = f'{get_filename(entry.get('link'),'rss')}.md'
+                output_path = os.path.join(local_folder_path, filename)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(text_content)
+            except Exception as e:
+                print(f"Error processing feed {url}: {e}")
 
         # except Exception as e:
         #     print(f"    Error processing feed {url}: {e}")
