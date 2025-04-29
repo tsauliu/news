@@ -14,7 +14,7 @@ import re
 
 chrome_options = Options()
 
-test=True
+test=False
 
 if test:
     driver = webdriver.Remote(
