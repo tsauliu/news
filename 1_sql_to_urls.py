@@ -46,14 +46,14 @@ article_clean = pd.concat([article_clean, wechat_articles]).drop_duplicates(subs
 
 titles = article_clean['title'].unique()
 # read the RSS database file
-rss_articles = pd.read_csv('data/rss_articles.csv')
-rss_articles['source'] = 'rss'
-rss_articles['publish_time'] = pd.to_datetime(rss_articles['published']).dt.strftime('%Y-%m-%d %H:%M:%S')
-rss_articles['url'] = rss_articles['link']
-rss_articles['mp_name'] = rss_articles['source_name']
-rss_articles = rss_articles[['mp_name', 'title', 'url', 'publish_time','source']].sort_values(by='publish_time', ascending=False)
-c1=~rss_articles['title'].isin(titles)
-article_clean = pd.concat([article_clean, rss_articles[c1]]).drop_duplicates(subset=['title'])
+# rss_articles = pd.read_csv('data/rss_articles.csv')
+# rss_articles['source'] = 'rss'
+# rss_articles['publish_time'] = pd.to_datetime(rss_articles['published']).dt.strftime('%Y-%m-%d %H:%M:%S')
+# rss_articles['url'] = rss_articles['link']
+# rss_articles['mp_name'] = rss_articles['source_name']
+# rss_articles = rss_articles[['mp_name', 'title', 'url', 'publish_time','source']].sort_values(by='publish_time', ascending=False)
+# c1=~rss_articles['title'].isin(titles)
+# article_clean = pd.concat([article_clean, rss_articles[c1]]).drop_duplicates(subset=['title'])
 
 
 # save the article_clean to csv
@@ -63,7 +63,6 @@ os.makedirs(folder_path, exist_ok=True)
 
 article_recent[['publish_time','mp_name','title', 'url','source']].to_csv(os.path.join(folder_path, f'{friday_date}_article_urls.csv'), index=False)
 article_clean.sort_values(by='publish_time', ascending=False)[['publish_time','mp_name','title', 'url','source']].to_excel(os.path.join(folder_path, f'article_urls.xlsx'), index=False)
-
 
 print(f'{friday_date}_article_urls.csv saved')
 print(f'{len(article_clean)} articles saved')
