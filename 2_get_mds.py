@@ -3,6 +3,7 @@
 import pandas as pd
 import os
 from parameters import friday_date, download_file,get_filename
+import datetime
 # from web_scrawler import scrape_url_to_md, driver
 # Read URLs from CSV
 urls = pd.read_csv(f'./data/1_urls/{friday_date}_article_urls.csv')
@@ -24,7 +25,12 @@ for _, row in urls.iterrows():
         if os.path.exists(output_path):
             continue
         remote_md_url = f"http://118.193.44.18:8000/data/articles/{friday_date}/{filename}"
-        download_file(remote_md_url, output_path)
+        status=download_file(remote_md_url, output_path)
+        if not status:
+            last_friday_date=datetime.datetime.strptime(friday_date, '%Y-%m-%d') - datetime.timedelta(days=7)
+            last_friday_date=last_friday_date.strftime('%Y-%m-%d')
+            remote_md_url = f"http://118.193.44.18:8000/data/articles/{last_friday_date}/{filename}"
+            status=download_file(remote_md_url, output_path)
     elif row['source'] == 'rss':
         pass
         # print(f"RSS article {title}")

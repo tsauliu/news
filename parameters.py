@@ -19,11 +19,13 @@ def download_file(url, local_path):        # Download the database file
             with open(local_path, 'wb') as f:
                 shutil.copyfileobj(response.raw, f)
                 print(f"File successfully downloaded to {local_path}")
+                return True
         else:
             print(f"Failed to download file. Status code: {response.status_code}")
+            return False
     except Exception as e:
         print(f"Error downloading file: {e}")
-
+        return False
 def get_filename(url,source):
     if source == 'wechat':
         return url.split('/')[-1]
