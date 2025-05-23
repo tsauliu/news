@@ -12,7 +12,7 @@ def pdf_to_md(friday_date):
 
     if os.path.exists(source_path):
         if not os.path.exists(raw_path):
-            shutil.copytree(source_path, raw_path)
+            shutil.move(source_path, raw_path)
     else:
         raise FileNotFoundError(f"Source path {source_path} does not exist")
 
