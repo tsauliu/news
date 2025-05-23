@@ -22,8 +22,8 @@ for file in sorted(os.listdir(raw_path), key=lambda x: x.split('-')[0:3] if '-' 
     if file.endswith('.pdf'):
         print(file)
         ds_summary=open(f'./pdfreport/04 summary/{friday_date}_ds/{file.replace('.pdf', '.md')}', 'r', encoding='utf-8').read()
-        gemini_summary=open(f'./pdfreport/04 summary/{friday_date}_gemini/{file.replace('.pdf', '.md')}', 'r', encoding='utf-8').read()
-        for summary in [ds_summary,gemini_summary]:
+        # gemini_summary=open(f'./pdfreport/04 summary/{friday_date}_gemini/{file.replace('.pdf', '.md')}', 'r', encoding='utf-8').read()
+        for summary in [ds_summary]:
             lines = summary.strip().split('\n')
             for line in lines:
                 if line.startswith('**'):
