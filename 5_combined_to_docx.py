@@ -1,11 +1,13 @@
 # combine the summary and detailed news into a docx file
 # %%
+from pdfreport.run import auto_weekly_reports
+auto_weekly_reports()
+
 from docx import Document
 import pandas as pd
 import datetime,os
 from parameters import friday_date,sector_list
 import shutil
-
 
 doc = Document('news_template.docx')
 

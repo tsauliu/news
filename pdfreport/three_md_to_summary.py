@@ -6,8 +6,8 @@ import os
 from models import deepseek_model,count_tokens,gemini_model
 
 def md_to_summary(friday_date):
-    raw_path=f'./03 cleaned_markdown/{friday_date}'
-    output_path_ds=f'./04 summary/{friday_date}_ds'
+    raw_path=f'pdfreport/03 cleaned_markdown/{friday_date}'
+    output_path_ds=f'pdfreport/04 summary/{friday_date}_ds'
     # output_path_gemini=f'./04 summary/{friday_date}_gemini'
     os.makedirs(output_path_ds, exist_ok=True)
     # os.makedirs(output_path_gemini, exist_ok=True)
@@ -22,7 +22,7 @@ def md_to_summary(friday_date):
         with open(os.path.join(raw_path, file), 'r') as f:
             content = f.read()
             
-        prompt = open('prompt.txt','r').read()
+        prompt = open('pdfreport/prompt.txt','r').read()
         print('total tokens:',count_tokens(prompt+'\n -- \n'+content))
         
         summary_ds = deepseek_model(prompt,content)

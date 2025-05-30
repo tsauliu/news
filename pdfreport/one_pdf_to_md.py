@@ -7,16 +7,16 @@ import os
 import shutil
 
 def pdf_to_md(friday_date):
-    source_path=os.path.expanduser(f'~/Dropbox/VoiceMemos/{friday_date}')
-    raw_path=f'./01 raw/{friday_date}'
+    source_path=os.path.expanduser(f'~/Dropbox/MyServerFiles/AutoWeekly/{friday_date}')
+    raw_path=f'pdfreport/01 raw/{friday_date}'
 
     if os.path.exists(source_path):
         if not os.path.exists(raw_path):
             shutil.move(source_path, raw_path)
     else:
-        raise FileNotFoundError(f"Source path {source_path} does not exist")
+        pass
 
-    output_path=f'./02 markdown/{friday_date}'
+    output_path=f'pdfreport/02 markdown/{friday_date}'
 
     if os.path.exists(raw_path):
         os.makedirs(output_path, exist_ok=True)

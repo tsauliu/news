@@ -5,8 +5,8 @@ from parameters import friday_date
 import os
 
 def clean_markdown(friday_date):
-    raw_path=f'./02 markdown/{friday_date}'
-    output_path=f'./03 cleaned_markdown/{friday_date}'
+    raw_path=f'pdfreport/02 markdown/{friday_date}'
+    output_path=f'pdfreport/03 cleaned_markdown/{friday_date}'
     os.makedirs(output_path, exist_ok=True)
     os.makedirs(raw_path, exist_ok=True)
 
