@@ -229,6 +229,7 @@ def main():
     # Step 3: Assemble Word document
     print("Step 3: Assembling Word document...")
     output_file = f'data/{friday_date}_weekly_news_english.docx'
+    df.to_excel(f'data/{friday_date}_weekly_news_english.xlsx', index=False)
     assemble_word_document(df, output_file)
     
     print(f"English Word document generated: {output_file}")
