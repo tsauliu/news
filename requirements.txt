@@ -9,3 +9,4 @@ feedparser
 markitdown[all]
 tiktoken
 google-genai
+tqdm>=4.60.0           # Progress bar for multi-threaded operations
