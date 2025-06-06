@@ -1,18 +1,16 @@
 # Step 1: Generate markdown file with Word formatting annotations
 # This script outputs all content to a markdown file for manual review
 
-# from pdfreport.run import auto_weekly_reports
-# auto_weekly_reports()
+from pdfreport.run import auto_weekly_reports
+auto_weekly_reports()
 
 import pandas as pd
 import datetime, os
 from parameters import friday_date, sector_list
 import shutil
 
-friday_date = '2025-05-30'
-
 # Create output markdown file
-output_md = f'data/{friday_date}_for_review.md'
+output_md = f'data/6_final_mds/{friday_date}_for_review.md'
 
 with open(output_md, 'w', encoding='utf-8') as f:
     # Research reports for the week

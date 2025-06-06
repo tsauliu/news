@@ -5,10 +5,10 @@ from docx import Document
 from parameters import friday_date
 import re
 
-friday_date = '2025-05-30'
+# friday_date = '2025-05-30'
 
 # Load the reviewed markdown file
-input_md = f'data/{friday_date}_for_review.md'
+input_md = f'data/6_final_mds/{friday_date}_for_review.md'
 
 # Create new Word document using template
 doc = Document('news_template.docx')
@@ -91,7 +91,7 @@ while i < len(lines):
         i += 1
 
 # Save the document
-output_file = f'data/{friday_date}_weekly_news.docx'
+output_file = f'data/7_docx/{friday_date}_weekly_news.docx'
 doc.save(output_file)
 
 print(f"Word document generated: {output_file}")

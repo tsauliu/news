@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 from tqdm import tqdm
 
-friday_date = '2025-05-30'
+# friday_date = '2025-05-30'
 
 # Translation prompt for DeepSeek model
 translation_prompt = """You are a professional translator specializing in automotive industry content. 
@@ -167,7 +167,7 @@ def assemble_word_document(df, output_file):
 def main():
     global df, rows_to_translate
     # Step 1: Parse markdown file to dataframe
-    input_md = f'data/{friday_date}_for_review.md'
+    input_md = f'data/6_final_mds/{friday_date}_for_review.md'
     
     print("Step 1: Parsing markdown file...")
     with open(input_md, 'r', encoding='utf-8') as f:
@@ -228,8 +228,8 @@ def main():
     
     # Step 3: Assemble Word document
     print("Step 3: Assembling Word document...")
-    output_file = f'data/{friday_date}_weekly_news_english.docx'
-    df.to_excel(f'data/{friday_date}_weekly_news_english.xlsx', index=False)
+    output_file = f'data/7_docx/{friday_date}_weekly_news_english.docx'
+    df.to_excel(f'data/7_docx/{friday_date}_weekly_news_english.xlsx', index=False)
     assemble_word_document(df, output_file)
     
     print(f"English Word document generated: {output_file}")
