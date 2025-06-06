@@ -30,7 +30,7 @@ detailed_eng_md = f'{output_dir}/{friday_date}_detailed_news_english.md'
 os.makedirs(output_dir, exist_ok=True)
 os.makedirs(docx_dir, exist_ok=True)
 
-# Translation prompt for models
+# Translation prompt for DeepSeek (line by line translation)
 translation_prompt = """You are a professional translator specializing in automotive industry content. 
 Translate the following Chinese text to natural, accurate English. 
 Context: This is automotive industry news, research reports, and market analysis.
@@ -56,6 +56,42 @@ Specific translation guidelines for key terms:
 Please translate the following text:
 """
 
+# Special translation prompt for Gemini (full file translation)
+gemini_translation_prompt = """You are a professional translator specializing in automotive industry content. 
+Translate the following Chinese text to natural, accurate English. 
+Context: This is automotive industry news, research reports, and market analysis.
+
+CRITICAL FORMATTING REQUIREMENTS:
+1. ONLY translate text content - DO NOT modify any formatting or structure
+2. Keep ALL HTML comments and tags EXACTLY as they are (e.g., <!-- WORD_STYLE: bullet -->)
+3. Keep ALL links COMPLETELY unchanged (URLs, link text, markdown link syntax)
+4. Preserve ALL markdown formatting (headers, bullet points, numbering, etc.)
+5. Maintain the exact line breaks and spacing structure
+6. Do not add, remove, or modify any special characters or symbols
+
+Translation Requirements:
+1. Maintain professional automotive terminology
+2. Keep the original meaning and tone
+3. Use natural, native English expressions
+4. Keep company names, brand names, or proper nouns accurate
+5. Keep technical terms accurate
+6. IMPORTANT: Your output must be ENGLISH ONLY - no Chinese characters allowed in the response
+7. If text is already in English, keep it unchanged
+8. Never include any Chinese text in your response under any circumstances
+
+Specific translation guidelines for key terms:
+- 商业落地 → Commercialization
+- 核心技术 → New Technology
+- 政策监管 → Policy Regulation
+- 企业战略 → Corporate Strategy
+- 硬件设备 → Hardware
+- 资本动向 → Capital Trends
+
+REMEMBER: Only translate the text content, preserve all formatting, tags, and links exactly as they are.
+
+Please translate the following text:
+"""
+
 # Thread lock for print statements
 print_lock = threading.Lock()
 
@@ -70,7 +106,7 @@ def translate_with_gemini(text):
         return text
     
     try:
-        translated = gemini_model(translation_prompt, text)
+        translated = gemini_model(gemini_translation_prompt, text)
         return translated.strip()
     except Exception as e:
         safe_print(f"Gemini translation error: {e}")
@@ -337,8 +373,8 @@ def main():
     print("\n=== Step 2: Translating Key Takeaway with Gemini ===")
     translate_file_with_gemini(takeaway_md, takeaway_eng_md)
     
-    print("\n=== Step 3: Translating Detailed News with DeepSeek ===")
-    translate_detailed_news_with_deepseek(detailed_md, detailed_eng_md)
+    # print("\n=== Step 3: Translating Detailed News with DeepSeek ===")
+    # translate_detailed_news_with_deepseek(detailed_md, detailed_eng_md)
     
     print("\n=== Step 4: Assembling English Word Document ===")
     # Create new Word document using template
