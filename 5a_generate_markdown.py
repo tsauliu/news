@@ -1,5 +1,5 @@
-# Step 1: Generate markdown file with Word formatting annotations
-# This script outputs all content to a markdown file for manual review
+# Step 1: Generate three separate markdown files with Word formatting annotations
+# This script outputs content to three markdown files for manual review
 
 from pdfreport.run import auto_weekly_reports
 auto_weekly_reports()
@@ -9,10 +9,16 @@ import datetime, os
 from parameters import friday_date, sector_list
 import shutil
 
-# Create output markdown file
-output_md = f'data/6_final_mds/{friday_date}_for_review.md'
+# Create output directory
+output_dir = f'data/6_final_mds'
+os.makedirs(output_dir, exist_ok=True)
 
-with open(output_md, 'w', encoding='utf-8') as f:
+# =============================================================================
+# 1. Generate Sellside Highlights Markdown
+# =============================================================================
+sellside_md = f'{output_dir}/{friday_date}_sellside_highlights.md'
+
+with open(sellside_md, 'w', encoding='utf-8') as f:
     # Research reports for the week
     f.write(f'<!-- WORD_STYLE: heading_level_1 -->\n')
     f.write(f'# Sellside highlights for Week – {friday_date}\n\n')
@@ -25,7 +31,7 @@ with open(output_md, 'w', encoding='utf-8') as f:
     # Sort files by date in filename (yyyy-mm-dd format)
     for file in sorted(os.listdir(raw_path), key=lambda x: x.split('-')[0:3] if '-' in x else x, reverse=True):
         if file.endswith('.pdf'):
-            print(file)
+            print(f"Processing {file}")
             ds_summary = open(f'./pdfreport/04 summary/{friday_date}_ds/{file.replace(".pdf", ".md")}', 'r', encoding='utf-8').read()
             
             for summary in [ds_summary]:
@@ -50,9 +56,14 @@ with open(output_md, 'w', encoding='utf-8') as f:
                 f.write('<!-- WORD_STYLE: link -->\n')
                 f.write(f'https://auto.bda-news.com/{friday_date}/{file_id}.pdf\n\n')
 
-    # Add page break
-    f.write('<!-- WORD_STYLE: page_break -->\n\n')
-    
+print(f"Sellside highlights generated: {sellside_md}")
+
+# =============================================================================
+# 2. Generate Key News Takeaway Markdown
+# =============================================================================
+takeaway_md = f'{output_dir}/{friday_date}_key_takeaway.md'
+
+with open(takeaway_md, 'w', encoding='utf-8') as f:
     # Key takeaway for the week
     summary_md = open(f'data/5_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
 
@@ -65,18 +76,19 @@ with open(output_md, 'w', encoding='utf-8') as f:
         if line.startswith('##'):
             f.write('\n')
             f.write('<!-- WORD_STYLE: summarytitle -->\n')
-            f.write(f'{line[2:].replace(" ","")}\n\n')
+            f.write(f'{line[2:].strip()}\n\n')
         elif len(line) > 10 and line.startswith('#'):
             f.write('<!-- WORD_STYLE: bullet -->\n')
-            f.write(f'{line.replace("*","").replace("**","").replace("- ","").replace("#","").replace(" ","")}\n\n')
+            f.write(f'{line.replace("*","").replace("**","").replace("- ","").replace("#","").strip()}\n\n')
 
-    f.write('<!-- WORD_STYLE: page_break -->\n\n')
+print(f"Key takeaway generated: {takeaway_md}")
 
-    # Table of Contents
-    f.write('<!-- WORD_STYLE: heading_level_1 -->\n')
-    f.write('# Table of Contents\n\n')
-    f.write('<!-- WORD_STYLE: page_break -->\n\n')
-    
+# =============================================================================
+# 3. Generate Detailed News Markdown
+# =============================================================================
+detailed_md = f'{output_dir}/{friday_date}_detailed_news.md'
+
+with open(detailed_md, 'w', encoding='utf-8') as f:
     # Detailed News for the week
     f.write('<!-- WORD_STYLE: heading_level_1 -->\n')
     f.write(f'# Detailed News for Week – {friday_date}\n\n')
@@ -135,5 +147,10 @@ with open(output_md, 'w', encoding='utf-8') as f:
                 f.write('<!-- WORD_STYLE: normal_paragraph -->\n')
                 f.write(f'{row["content"]}\n\n')
 
-print(f"Markdown file generated: {output_md}")
-print("Please review and edit this file, then run the second script.") 
+print(f"Detailed news generated: {detailed_md}")
+
+print("All three markdown files generated successfully!")
+print("Files created:")
+print(f"1. {sellside_md}")
+print(f"2. {takeaway_md}")
+print(f"3. {detailed_md}") 

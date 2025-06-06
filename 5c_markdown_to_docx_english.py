@@ -1,19 +1,36 @@
 #%%
-# Step 3c: Generate English Word document from reviewed markdown file (Multi-threaded version)
-# This script reads the markdown file, translates non-link content to English using multiple threads, and applies Word formatting
+# Step 3: Generate English Word document from three markdown files
+# This script translates three markdown files and combines them into one English Word document
 
 from docx import Document
 from parameters import friday_date
-from models import deepseek_model
+from models import deepseek_model,gemini_model
 import pandas as pd
 import re
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 from tqdm import tqdm
 
-# friday_date = '2025-05-30'
+# Input and output directories
+input_dir = f'data/6_final_mds'
+output_dir = f'data/6_final_mds'
+docx_dir = 'data/7_docx'
 
-# Translation prompt for DeepSeek model
+# Input markdown files
+sellside_md = f'{input_dir}/{friday_date}_sellside_highlights.md'
+takeaway_md = f'{input_dir}/{friday_date}_key_takeaway.md'
+detailed_md = f'{input_dir}/{friday_date}_detailed_news.md'
+
+# Output English markdown files
+sellside_eng_md = f'{output_dir}/{friday_date}_sellside_highlights_english.md'
+takeaway_eng_md = f'{output_dir}/{friday_date}_key_takeaway_english.md'
+detailed_eng_md = f'{output_dir}/{friday_date}_detailed_news_english.md'
+
+os.makedirs(output_dir, exist_ok=True)
+os.makedirs(docx_dir, exist_ok=True)
+
+# Translation prompt for models
 translation_prompt = """You are a professional translator specializing in automotive industry content. 
 Translate the following Chinese text to natural, accurate English. 
 Context: This is automotive industry news, research reports, and market analysis.
@@ -35,6 +52,8 @@ Specific translation guidelines for key terms:
 - 企业战略 → Corporate Strategy
 - 硬件设备 → Hardware
 - 资本动向 → Capital Trends
+
+Please translate the following text:
 """
 
 # Thread lock for print statements
@@ -45,8 +64,20 @@ def safe_print(message):
     with print_lock:
         print(message)
 
-def translate_to_english(text):
-    """Translate Chinese text to English using DeepSeek model"""
+def translate_with_gemini(text):
+    """Translate entire file content using Gemini model"""
+    if not text or len(text.strip()) < 3:
+        return text
+    
+    try:
+        translated = gemini_model(translation_prompt, text)
+        return translated.strip()
+    except Exception as e:
+        safe_print(f"Gemini translation error: {e}")
+        return text
+
+def translate_with_deepseek(text):
+    """Translate text using DeepSeek model"""
     if not text or len(text.strip()) < 3:
         return text
     
@@ -54,22 +85,29 @@ def translate_to_english(text):
         translated = deepseek_model(translation_prompt, text)
         return translated.strip()
     except Exception as e:
-        safe_print(f"Translation error: {e}")
-        return text  # Return original text if translation fails
+        safe_print(f"DeepSeek translation error: {e}")
+        return text
 
-def translate_row(row):
-    """Translate a single row from the dataframe"""
-    index, style, text = row['index'], row['style'], row['text']
+def translate_file_with_gemini(input_file, output_file):
+    """Translate entire file using Gemini"""
+    print(f"Translating {input_file} with Gemini...")
     
-    # Determine if we should translate this content
-    should_translate = style not in ['link', 'page_break']
+    if not os.path.exists(input_file):
+        print(f"Warning: File {input_file} not found, skipping...")
+        return
     
-    if should_translate and text and len(text.strip()) >= 3:
-        safe_print(f"Translating row {index}: {text[:50]}...")
-        translated_text = translate_to_english(text)
-        return {'index': index, 'style': style, 'text': text, 'translated_text': translated_text}
-    else:
-        return {'index': index, 'style': style, 'text': text, 'translated_text': text}
+    # Read the entire file
+    with open(input_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Translate the entire content
+    translated_content = translate_with_gemini(content)
+    
+    # Write to output file
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(translated_content)
+    
+    print(f"Gemini translation completed: {output_file}")
 
 def parse_markdown_to_dataframe(content):
     """Parse markdown content and return a dataframe with index, style, and text"""
@@ -114,79 +152,34 @@ def parse_markdown_to_dataframe(content):
     
     return pd.DataFrame(data)
 
-def assemble_word_document(df, output_file):
-    """Assemble Word document from translated dataframe"""
-    # Create new Word document using template
-    doc = Document('news_template.docx')
+def translate_row(row):
+    """Translate a single row from the dataframe"""
+    index, style, text = row['index'], row['style'], row['text']
     
-    for _, row in df.iterrows():
-        style = row['style']
-        translated_text = row['translated_text']
-        
-        # Skip empty lines
-        if style == 'empty':
-            continue
-            
-        # Apply formatting based on style
-        if style == 'heading_level_1':
-            # Remove markdown # symbols and add as Word heading
-            heading_text = translated_text.replace('#', '').strip()
-            doc.add_heading(heading_text, level=1)
-        
-        elif style == 'heading_level_2':
-            # Remove markdown ## symbols and add as Word heading
-            heading_text = translated_text.replace('#', '').strip()
-            doc.add_heading(heading_text, level=2)
-        
-        elif style == 'heading_level_3':
-            # Remove markdown ### symbols and add as Word heading
-            heading_text = translated_text.replace('#', '').strip()
-            doc.add_heading(heading_text, level=3)
-        
-        elif style == 'summarytitle':
-            doc.add_paragraph('')
-            doc.add_paragraph(translated_text, style='summarytitle')
-        
-        elif style == 'bullet':
-            doc.add_paragraph(translated_text, style='bullet')
-        
-        elif style == 'link':
-            # Don't translate links, keep original
-            doc.add_paragraph(translated_text, style='link')
-        
-        elif style == 'author':
-            doc.add_paragraph(translated_text, style='author')
-        
-        elif style == 'normal_paragraph':
-            if translated_text:  # Only add non-empty paragraphs
-                doc.add_paragraph(translated_text)
-                doc.add_paragraph('')  # Add empty paragraph after content
-        
-        elif style == 'page_break':
-            doc.add_page_break()
-        
-        else:
-            # Unknown style, treat as normal paragraph
-            if translated_text:  # Only add non-empty paragraphs
-                doc.add_paragraph(translated_text)
+    # Determine if we should translate this content
+    should_translate = style not in ['link', 'page_break']
     
-    # Save the document
-    doc.save(output_file)
+    if should_translate and text and len(text.strip()) >= 3:
+        safe_print(f"Translating row {index}: {text[:50]}...")
+        translated_text = translate_with_deepseek(text)
+        return {'index': index, 'style': style, 'text': text, 'translated_text': translated_text}
+    else:
+        return {'index': index, 'style': style, 'text': text, 'translated_text': text}
 
-def main():
-    global df, rows_to_translate
-    # Step 1: Parse markdown file to dataframe
-    input_md = f'data/6_final_mds/{friday_date}_for_review.md'
+def translate_detailed_news_with_deepseek(input_file, output_file):
+    """Translate detailed news file line by line using DeepSeek"""
+    print(f"Translating {input_file} with DeepSeek (line by line)...")
     
-    print("Step 1: Parsing markdown file...")
-    with open(input_md, 'r', encoding='utf-8') as f:
+    if not os.path.exists(input_file):
+        print(f"Warning: File {input_file} not found, skipping...")
+        return
+    
+    # Read and parse the file
+    with open(input_file, 'r', encoding='utf-8') as f:
         content = f.read()
     
     df = parse_markdown_to_dataframe(content)
     print(f"Parsed {len(df)} items from markdown file")
-    
-    # Step 2: Multi-threaded translation
-    print("Step 2: Starting multi-threaded translation...")
     
     # Filter rows that need translation
     rows_to_translate = df[
@@ -199,7 +192,7 @@ def main():
     print(f"Found {len(rows_to_translate)} items to translate")
     
     # Use ThreadPoolExecutor for multi-threading
-    max_workers = 100  # Adjust based on your system and API limits
+    max_workers = 50  # Adjust based on your system and API limits
     translated_results = []
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -210,7 +203,7 @@ def main():
         }
         
         # Process completed translations with progress bar
-        with tqdm(total=len(future_to_row), desc="Translating") as pbar:
+        with tqdm(total=len(future_to_row), desc="Translating with DeepSeek") as pbar:
             for future in as_completed(future_to_row):
                 try:
                     result = future.result()
@@ -235,14 +228,155 @@ def main():
     
     print(f"Translation completed. Processed {len(translated_results)} items")
     
-    # Step 3: Assemble Word document
-    print("Step 3: Assembling Word document...")
-    output_file = f'data/7_docx/{friday_date}_weekly_news_english.docx'
-    df.to_excel(f'data/7_docx/{friday_date}_weekly_news_english.xlsx', index=False)
-    assemble_word_document(df, output_file)
+    # Reconstruct the markdown file
+    output_lines = []
+    for _, row in df.iterrows():
+        if row['style'] == 'empty':
+            output_lines.append('')
+        else:
+            output_lines.append(f'<!-- WORD_STYLE: {row["style"]} -->')
+            output_lines.append(row['translated_text'])
     
-    print(f"English Word document generated: {output_file}")
+    # Write to output file
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(output_lines))
+    
+    print(f"DeepSeek translation completed: {output_file}")
+
+def process_markdown_file(file_path, doc):
+    """Process a markdown file and add content to the Word document"""
+    print(f"Processing: {file_path}")
+    
+    if not os.path.exists(file_path):
+        print(f"Warning: File {file_path} not found, skipping...")
+        return
+    
+    # Read the markdown file
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # Split content by lines and process
+    lines = content.split('\n')
+    i = 0
+
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # Skip empty lines
+        if not line:
+            i += 1
+            continue
+        
+        # Check for Word style annotations
+        if line.startswith('<!-- WORD_STYLE:'):
+            # Extract the style
+            style_match = re.search(r'<!-- WORD_STYLE: (.+?) -->', line)
+            if style_match:
+                style = style_match.group(1).strip()
+                i += 1  # Move to next line for content
+                
+                # Get the content line(s)
+                if i < len(lines):
+                    content_line = lines[i].strip()
+                    
+                    # Apply formatting based on style
+                    if style == 'heading_level_1':
+                        # Remove markdown # symbols and add as Word heading
+                        heading_text = content_line.replace('#', '').strip()
+                        doc.add_heading(heading_text, level=1)
+                    
+                    elif style == 'heading_level_2':
+                        # Remove markdown ## symbols and add as Word heading
+                        heading_text = content_line.replace('#', '').strip()
+                        doc.add_heading(heading_text, level=2)
+                    
+                    elif style == 'heading_level_3':
+                        # Remove markdown ### symbols and add as Word heading
+                        heading_text = content_line.replace('#', '').strip()
+                        doc.add_heading(heading_text, level=3)
+                    
+                    elif style == 'summarytitle':
+                        doc.add_paragraph('')
+                        doc.add_paragraph(content_line, style='summarytitle')
+                    
+                    elif style == 'bullet':
+                        doc.add_paragraph(content_line, style='bullet')
+                    
+                    elif style == 'link':
+                        doc.add_paragraph(content_line, style='link')
+                    
+                    elif style == 'author':
+                        doc.add_paragraph(content_line, style='author')
+                    
+                    elif style == 'normal_paragraph':
+                        if content_line:  # Only add non-empty paragraphs
+                            doc.add_paragraph(content_line)
+                            doc.add_paragraph('')  # Add empty paragraph after content
+                    
+                    elif style == 'page_break':
+                        doc.add_page_break()
+                        i += 1  # Skip the content line for page breaks
+                        continue
+                    
+                    else:
+                        # Unknown style, treat as normal paragraph
+                        if content_line:  # Only add non-empty paragraphs
+                            doc.add_paragraph(content_line)
+            
+            i += 1
+        else:
+            # Line without style annotation - treat as normal paragraph if not empty
+            if line:
+                doc.add_paragraph(line)
+            i += 1
+
+def main():
+    print("=== Step 1: Translating Sellside Highlights with Gemini ===")
+    translate_file_with_gemini(sellside_md, sellside_eng_md)
+    
+    print("\n=== Step 2: Translating Key Takeaway with Gemini ===")
+    translate_file_with_gemini(takeaway_md, takeaway_eng_md)
+    
+    print("\n=== Step 3: Translating Detailed News with DeepSeek ===")
+    translate_detailed_news_with_deepseek(detailed_md, detailed_eng_md)
+    
+    print("\n=== Step 4: Assembling English Word Document ===")
+    # Create new Word document using template
+    doc = Document('news_template.docx')
+    
+    # Process the three English markdown files in order
+    print("Processing English Sellside Highlights...")
+    process_markdown_file(sellside_eng_md, doc)
+    
+    # Add page break after sellside highlights
+    doc.add_page_break()
+    
+    print("Processing English Key News Takeaway...")
+    process_markdown_file(takeaway_eng_md, doc)
+    
+    # Add page break after key takeaway
+    doc.add_page_break()
+    
+    # Add Table of Contents
+    print("Adding Table of Contents...")
+    doc.add_heading('Table of Contents', level=1)
+    doc.add_page_break()
+    
+    print("Processing English Detailed News...")
+    process_markdown_file(detailed_eng_md, doc)
+    
+    # Save the document
+    output_file = f'{docx_dir}/{friday_date}_weekly_news_english.docx'
+    doc.save(output_file)
+    
+    print(f"\nEnglish Word document generated: {output_file}")
     print("Document creation completed!")
+    
+    print("\nGenerated files:")
+    print(f"1. {sellside_eng_md}")
+    print(f"2. {takeaway_eng_md}")
+    print(f"3. {detailed_eng_md}")
+    print(f"4. {output_file}")
 
 if __name__ == "__main__":
     main() 
