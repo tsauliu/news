@@ -31,6 +31,6 @@ from apikey import gemini_key
 def gemini_model(prompt,content):
     client = genai.Client(api_key=gemini_key)
     response = client.models.generate_content(
-        model="gemini-2.5-pro-preview-03-25", contents=prompt+'\n -- \n'+content
+        model="gemini-2.5-pro-preview-06-05", contents=prompt+'\n -- \n'+content
     )
     return response.text

@@ -26,7 +26,16 @@ Requirements:
 6. Only return the translated text, no explanations or additional content
 7. IMPORTANT: Your output must be ENGLISH ONLY - no Chinese characters allowed in the response
 8. If the input is already in English, return it unchanged
-9. Never include any Chinese text in your response under any circumstances"""
+9. Never include any Chinese text in your response under any circumstances
+
+Specific translation guidelines for key terms:
+- 商业落地 → Commercialization
+- 核心技术 → New Technology
+- 政策监管 → Policy Regulation
+- 企业战略 → Corporate Strategy
+- 硬件设备 → Hardware
+- 资本动向 → Capital Trends
+"""
 
 # Thread lock for print statements
 print_lock = threading.Lock()
