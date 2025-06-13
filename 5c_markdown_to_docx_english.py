@@ -373,8 +373,8 @@ def main():
     print("\n=== Step 2: Translating Key Takeaway with Gemini ===")
     translate_file_with_gemini(takeaway_md, takeaway_eng_md)
     
-    # print("\n=== Step 3: Translating Detailed News with DeepSeek ===")
-    # translate_detailed_news_with_deepseek(detailed_md, detailed_eng_md)
+    print("\n=== Step 3: Translating Detailed News with DeepSeek ===")
+    translate_detailed_news_with_deepseek(detailed_md, detailed_eng_md)
     
     print("\n=== Step 4: Assembling English Word Document ===")
     # Create new Word document using template
