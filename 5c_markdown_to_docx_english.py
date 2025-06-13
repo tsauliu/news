@@ -402,7 +402,7 @@ def main():
     process_markdown_file(detailed_eng_md, doc)
     
     # Save the document
-    output_file = f'{docx_dir}/{friday_date}_weekly_news_english.docx'
+    output_file = f'{docx_dir}/Autonomous Driving AI News Summary {friday_date}_ENG.docx'
     doc.save(output_file)
     
     print(f"\nEnglish Word document generated: {output_file}")
