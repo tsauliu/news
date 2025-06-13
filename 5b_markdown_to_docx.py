@@ -124,7 +124,7 @@ process_markdown_file(detailed_md, doc)
 # Save the document
 output_dir = 'data/7_docx'
 os.makedirs(output_dir, exist_ok=True)
-output_file = f'{output_dir}/Autonomous Driving AI News Summary {friday_date}.docx'
+output_file = f'{output_dir}/Autonomous Driving AI News Summary {friday_date.replace("-", " ")}.docx'
 doc.save(output_file)
 
 print(f"Chinese Word document generated: {output_file}")
