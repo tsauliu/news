@@ -31,6 +31,7 @@ wechat_articles['source'] = 'wechat'
 wechat_articles.rename(columns={'pub_time':'publish_time','article_title':'title','channel_scraped':'mp_name'}, inplace=True)
 wechat_articles=wechat_articles[['mp_name', 'title', 'url', 'publish_time','source']].sort_values(by='publish_time', ascending=False)
 
+#%%
 # read the local database file
 conn = sqlite3.connect('data/wewe-rss.db')
 articles = pd.read_sql_query("SELECT * FROM articles", conn)
