@@ -32,7 +32,52 @@ with open(sellside_md, 'w', encoding='utf-8') as f:
     for file in sorted(os.listdir(raw_path), key=lambda x: x.split('-')[0:3] if '-' in x else x, reverse=True):
         if file.endswith('.pdf'):
             print(f"Processing {file}")
-            ds_summary = open(f'./pdfreport/04 summary/{friday_date}_ds/{file.replace(".pdf", ".md")}', 'r', encoding='utf-8').read()
+            summary_file_path = f'./pdfreport/04 summary/{friday_date}_ds/{file.replace(".pdf", ".md")}'
+            
+            # Check if summary file exists before trying to read it
+            if not os.path.exists(summary_file_path):
+                print(f"Warning: Summary file not found for {file}")
+                print(f"Attempting to regenerate summary for {file}...")
+                
+                # Try to regenerate the missing summary
+                from pdfreport.three_md_to_summary import process_single_file
+                
+                # Check if cleaned markdown exists
+                cleaned_md_path = f'./pdfreport/03 cleaned_markdown/{friday_date}/{file.replace(".pdf", ".md")}'
+                if os.path.exists(cleaned_md_path):
+                    try:
+                        # Read prompt
+                        prompt = open('pdfreport/prompt.txt','r').read()
+                        
+                        # Attempt to regenerate summary
+                        output_path_ds = f'./pdfreport/04 summary/{friday_date}_ds'
+                        os.makedirs(output_path_ds, exist_ok=True)
+                        
+                        result = process_single_file(
+                            f'./pdfreport/03 cleaned_markdown/{friday_date}',
+                            output_path_ds,
+                            file.replace(".pdf", ".md"),
+                            prompt,
+                            max_retries=3
+                        )
+                        
+                        print(f"Regeneration result: {result}")
+                        
+                        # Check if regeneration was successful
+                        if not os.path.exists(summary_file_path):
+                            print(f"Failed to regenerate summary for {file}, skipping...")
+                            continue
+                        else:
+                            print(f"Successfully regenerated summary for {file}")
+                            
+                    except Exception as e:
+                        print(f"Error regenerating summary for {file}: {str(e)}")
+                        continue
+                else:
+                    print(f"Cleaned markdown not found for {file}, skipping...")
+                    continue
+                
+            ds_summary = open(summary_file_path, 'r', encoding='utf-8').read()
             
             for summary in [ds_summary]:
                 lines = summary.strip().split('\n')
