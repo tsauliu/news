@@ -100,6 +100,7 @@ def process_markdown_file(file_path, doc):
                 doc.add_paragraph(line)
             i += 1
 
+doc.add_page_break()
 # Process the three markdown files in order
 print("Step 1: Processing Sellside Highlights...")
 process_markdown_file(sellside_md, doc)
@@ -113,10 +114,10 @@ process_markdown_file(takeaway_md, doc)
 # Add page break after key takeaway
 doc.add_page_break()
 
-# Add Table of Contents
-print("Step 3: Adding Table of Contents...")
-doc.add_heading('Table of Contents', level=1)
-doc.add_page_break()
+# # Add Table of Contents
+# print("Step 3: Adding Table of Contents...")
+# doc.add_heading('Table of Contents', level=1)
+# doc.add_page_break()
 
 print("Step 4: Processing Detailed News...")
 process_markdown_file(detailed_md, doc)

@@ -379,6 +379,7 @@ def main():
     print("\n=== Step 4: Assembling English Word Document ===")
     # Create new Word document using template
     doc = Document('news_template.docx')
+    doc.add_page_break()
     
     # Process the three English markdown files in order
     print("Processing English Sellside Highlights...")
@@ -393,10 +394,10 @@ def main():
     # Add page break after key takeaway
     doc.add_page_break()
     
-    # Add Table of Contents
-    print("Adding Table of Contents...")
-    doc.add_heading('Table of Contents', level=1)
-    doc.add_page_break()
+    # # Add Table of Contents
+    # print("Adding Table of Contents...")
+    # doc.add_heading('Table of Contents', level=1)
+    # doc.add_page_break()
     
     print("Processing English Detailed News...")
     process_markdown_file(detailed_eng_md, doc)

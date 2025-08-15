@@ -19,7 +19,7 @@ def convert_single_pdf(raw_path, output_path, file):
     
     try:
         # 每个线程创建自己的MarkItDown实例，避免线程冲突
-        md = MarkItDown(enable_plugins=False)
+        md = MarkItDown()
         result = md.convert(os.path.join(raw_path, file))
         
         with open(output_file, 'w') as f:
