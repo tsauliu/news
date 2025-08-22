@@ -26,24 +26,31 @@ def deepseek_model(prompt,content):
     return summary(content)
 
 from google import genai
-from apikey import gemini_key
+from apikey import gemini_key, gemini_key2, gemini_key3
 
 def gemini_model(prompt,content):
     import time
-    client = genai.Client(api_key=gemini_key)
+    
+    # List of API keys to cycle through on retries
+    api_keys = [gemini_key, gemini_key2, gemini_key3]
+    key_names = ['gemini_key', 'gemini_key2', 'gemini_key3']
     
     for attempt in range(3):
         try:
+            # Use different API key for each attempt
+            current_key = api_keys[attempt]
+            key_name = key_names[attempt]
+            
+            client = genai.Client(api_key=current_key)
             response = client.models.generate_content(
                 model="gemini-2.5-pro", contents=prompt+'\n -- \n'+content
             )
             return response.text
         except Exception as e:
             if attempt < 2:  # Not the last attempt
-                wait_time = 60 * (2 ** attempt)  # 60, 120, 240 seconds
-                print(f"Gemini API failed (attempt {attempt + 1}/3): {e}")
-                print(f"Retrying in {wait_time} seconds...")
-                time.sleep(wait_time)
+                print(f"Gemini API failed with {key_names[attempt]} (attempt {attempt + 1}/3): {e}")
+                print(f"Retrying with {key_names[attempt + 1]} in 5 seconds...")
+                time.sleep(5)
             else:
-                print(f"Gemini API failed after 3 attempts: {e}")
+                print(f"Gemini API failed after 3 attempts with all keys: {e}")
                 raise

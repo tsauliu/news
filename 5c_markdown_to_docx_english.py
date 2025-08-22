@@ -101,28 +101,48 @@ def safe_print(message):
         print(message)
 
 def translate_with_gemini(text):
-    """Translate entire file content using Gemini model"""
+    """Translate entire file content using Gemini model with retries"""
     if not text or len(text.strip()) < 3:
         return text
     
-    try:
-        translated = gemini_model(gemini_translation_prompt, text)
-        return translated.strip()
-    except Exception as e:
-        safe_print(f"Gemini translation error: {e}")
-        return text
+    import time
+    max_retries = 3
+    
+    for attempt in range(max_retries):
+        try:
+            translated = gemini_model(gemini_translation_prompt, text)
+            return translated.strip()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 5 * (2 ** attempt)  # 5, 10, 20 seconds
+                safe_print(f"Gemini translation error (attempt {attempt + 1}/{max_retries}): {e}")
+                safe_print(f"Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+            else:
+                safe_print(f"Gemini translation failed after {max_retries} attempts: {e}")
+                return ""  # Return blank instead of Chinese text
 
 def translate_with_deepseek(text):
-    """Translate text using DeepSeek model"""
+    """Translate text using DeepSeek model with retries"""
     if not text or len(text.strip()) < 3:
         return text
     
-    try:
-        translated = deepseek_model(translation_prompt, text)
-        return translated.strip()
-    except Exception as e:
-        safe_print(f"DeepSeek translation error: {e}")
-        return text
+    import time
+    max_retries = 3
+    
+    for attempt in range(max_retries):
+        try:
+            translated = deepseek_model(translation_prompt, text)
+            return translated.strip()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 5 * (2 ** attempt)  # 5, 10, 20 seconds
+                safe_print(f"DeepSeek translation error (attempt {attempt + 1}/{max_retries}): {e}")
+                safe_print(f"Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+            else:
+                safe_print(f"DeepSeek translation failed after {max_retries} attempts: {e}")
+                return ""  # Return blank instead of Chinese text
 
 def translate_file_with_gemini(input_file, output_file):
     """Translate entire file using Gemini"""
@@ -259,8 +279,8 @@ def translate_detailed_news_with_deepseek(input_file, output_file):
         how='left'
     )
     
-    # Fill missing translations with original text
-    df['translated_text'] = df['translated_text'].fillna(df['text'])
+    # Fill missing translations with blank text instead of Chinese
+    df['translated_text'] = df['translated_text'].fillna("")
     
     print(f"Translation completed. Processed {len(translated_results)} items")
     
