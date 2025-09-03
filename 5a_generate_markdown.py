@@ -83,7 +83,7 @@ with open(sellside_md, 'w', encoding='utf-8') as f:
                 for line in lines:
                     if line.startswith('**'):
                         f.write('\n')
-                        f.write(f'## {line.replace("**","").strip()}\n\n')
+                        f.write(f'**{line.replace("**","").strip()}**\n\n')
                     elif len(line) > 10:
                         f.write(f'- {line.replace("*","").replace("**","").replace("- ","").replace("#","").strip()}\n')
             

@@ -43,139 +43,65 @@ def create_combined_html():
             body {
                 font-family: 'Noto Sans SC', 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
                 font-size: 11pt;
-                line-height: 1.8;
+                line-height: 1.3;
                 color: #2c3e50;
                 background: #ffffff;
                 margin: 0;
-                padding: 0;
+                padding: 0.5cm;
             }
             
-            .cover-page {
-                height: 100vh;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
-                page-break-after: always;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 2em;
-            }
-            
-            .cover-page h1 {
-                font-size: 36pt;
-                font-weight: 700;
-                margin-bottom: 0.5em;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            }
-            
-            .cover-page .subtitle {
-                font-size: 18pt;
-                font-weight: 300;
-                margin-bottom: 2em;
-                opacity: 0.95;
-            }
-            
-            .cover-page .date {
-                font-size: 14pt;
-                font-weight: 400;
-                position: absolute;
-                bottom: 3em;
-                opacity: 0.9;
-            }
             
             .content {
-                padding: 2.5cm 2cm;
-                max-width: 21cm;
-                margin: 0 auto;
-            }
-            
-            .toc {
-                page-break-after: always;
-                padding: 2.5cm 2cm;
-            }
-            
-            .toc h2 {
-                font-size: 24pt;
-                font-weight: 700;
-                color: #2c3e50;
-                margin-bottom: 1em;
-                text-align: center;
-                border-bottom: 3px solid #667eea;
-                padding-bottom: 0.5em;
-            }
-            
-            .toc-item {
-                font-size: 12pt;
-                margin: 0.8em 0;
-                padding-left: 1em;
-                border-left: 3px solid transparent;
-                transition: all 0.3s;
-            }
-            
-            .toc-item:hover {
-                border-left-color: #667eea;
-                padding-left: 1.5em;
-            }
-            
-            .toc-item a {
-                color: #34495e;
-                text-decoration: none;
-            }
-            
-            .toc-item .page-num {
-                float: right;
-                color: #7f8c8d;
+                padding: 0;
+                margin: 0;
+                padding-top: 0;
             }
             
             h1 {
                 font-size: 22pt;
                 font-weight: 700;
-                margin-top: 0;
-                margin-bottom: 1em;
+                margin-top: -1cm;
+                margin-bottom: 0.3em;
                 color: #2c3e50;
-                border-bottom: 3px solid #667eea;
-                padding-bottom: 0.3em;
+                border-bottom: 3px solid #2E7D32;
+                padding-bottom: 0.2em;
                 page-break-after: avoid;
             }
             
             h2 {
                 font-size: 16pt;
                 font-weight: 600;
-                margin-top: 1.5em;
-                margin-bottom: 0.8em;
+                margin-top: 0.5em;
+                margin-bottom: 0.3em;
                 color: #34495e;
-                border-left: 4px solid #667eea;
+                border-left: 4px solid #43A047;
                 padding-left: 0.5em;
-                background: #f8f9fa;
-                padding: 0.3em 0.5em;
                 page-break-after: avoid;
             }
             
             h3 {
                 font-size: 13pt;
                 font-weight: 600;
-                margin-top: 1.2em;
-                margin-bottom: 0.6em;
+                margin-top: 0.4em;
+                margin-bottom: 0.2em;
                 color: #2c3e50;
                 page-break-after: avoid;
             }
             
             p {
-                margin-bottom: 1em;
+                margin-bottom: 0.5em;
                 text-align: justify;
                 text-justify: inter-word;
             }
             
             ul, ol {
-                margin: 0.5em 0 1em 2em;
+                margin: 0.3em 0 0.5em 2em;
                 padding: 0;
             }
             
             li {
-                margin-bottom: 0.5em;
-                line-height: 1.8;
+                margin-bottom: 0.3em;
+                line-height: 1.3;
             }
             
             ul li {
@@ -188,7 +114,7 @@ def create_combined_html():
                 content: "•";
                 position: absolute;
                 left: 0;
-                color: #667eea;
+                color: #43A047;
                 font-weight: bold;
                 font-size: 1.2em;
             }
@@ -215,21 +141,21 @@ def create_combined_html():
             }
             
             blockquote {
-                margin: 1em 0;
-                padding: 1em;
-                background: #ecf0f1;
-                border-left: 4px solid #667eea;
+                margin: 0.3em 0;
+                padding: 0.5em;
+                background: #f5f5f5;
+                border-left: 4px solid #66BB6A;
                 font-style: italic;
             }
             
             .section-break {
                 page-break-before: always;
-                padding-top: 2.5cm;
+                padding-top: 0;
             }
             
             .news-item {
-                margin-bottom: 2em;
-                padding-bottom: 1em;
+                margin-bottom: 0.5em;
+                padding-bottom: 0.3em;
                 border-bottom: 1px dashed #bdc3c7;
             }
             
@@ -241,20 +167,20 @@ def create_combined_html():
                 font-size: 10pt;
                 color: #7f8c8d;
                 font-style: italic;
-                margin-bottom: 0.5em;
+                margin-bottom: 0.2em;
             }
             
             .highlight-box {
-                background: #fff9e6;
-                border: 2px solid #f1c40f;
+                background: #f9f9f9;
+                border: 2px solid #4CAF50;
                 border-radius: 8px;
-                padding: 1em;
-                margin: 1em 0;
+                padding: 0.5em;
+                margin: 0.3em 0;
             }
             
             @page {
                 size: A4;
-                margin: 2cm;
+                margin: 2cm 0.5cm;
                 
                 @bottom-center {
                     content: counter(page);
@@ -264,23 +190,13 @@ def create_combined_html():
                 }
                 
                 @top-right {
-                    content: "自动驾驶AI新闻摘要";
+                    content: "BDA Autonomous Driving New Update";
                     font-size: 9pt;
                     color: #95a5a6;
                     font-family: 'Noto Sans SC', sans-serif;
                 }
             }
             
-            @page:first {
-                @bottom-center { content: none; }
-                @top-right { content: none; }
-                margin: 0;
-            }
-            
-            @page:nth(2) {
-                @bottom-center { content: none; }
-                @top-right { content: none; }
-            }
             
             @media print {
                 .cover-page {
@@ -296,39 +212,10 @@ def create_combined_html():
     <body>
     """.replace('{friday_date}', friday_date))
     
-    # Add cover page
-    current_date = datetime.datetime.now().strftime('%Y年%m月%d日')
-    week_date = friday_date.replace('-', '年', 1).replace('-', '月', 1) + '日'
-    
-    html_content.append(f"""
-        <div class="cover-page">
-            <h1>自动驾驶AI新闻周报</h1>
-            <div class="subtitle">Autonomous Driving AI Weekly News Summary</div>
-            <div class="subtitle">第 {week_date} 期</div>
-            <div class="date">生成日期: {current_date}</div>
-        </div>
-    """)
-    
-    # Add table of contents
-    html_content.append("""
-        <div class="toc">
-            <h2>目录</h2>
-            <div class="toc-item">
-                <a href="#sellside">一、卖方研究精选 (Sellside Highlights)</a>
-            </div>
-            <div class="toc-item">
-                <a href="#takeaway">二、本周要闻提炼 (Key News Takeaway)</a>
-            </div>
-            <div class="toc-item">
-                <a href="#detailed">三、详细新闻内容 (Detailed News)</a>
-            </div>
-        </div>
-    """)
-    
-    # Process each markdown file
+    # Process each markdown file - reordered with takeaway first
     sections = [
-        ('sellside', sellside_md, '卖方研究精选'),
         ('takeaway', takeaway_md, '本周要闻提炼'),
+        ('sellside', sellside_md, '卖方研究精选'),
         ('detailed', detailed_md, '详细新闻内容')
     ]
     
@@ -338,7 +225,10 @@ def create_combined_html():
             continue
         
         # Add section break
-        html_content.append(f'<div class="section-break content" id="{section_id}">')
+        if section_id != 'takeaway':  # Only add section break for non-first sections
+            html_content.append(f'<div class="section-break content" id="{section_id}">')
+        else:
+            html_content.append(f'<div class="content" id="{section_id}">')
         
         # Read and convert markdown to HTML
         with open(md_file, 'r', encoding='utf-8') as f:
@@ -389,8 +279,7 @@ def generate_pdf():
         HTML(string=html_content).write_pdf(
             output_file,
             stylesheets=[CSS(string='''
-                @page { size: A4; margin: 2cm; }
-                @page:first { margin: 0; }
+                @page { size: A4; margin: 2cm 0.5cm; }
             ''')]
         )
         
