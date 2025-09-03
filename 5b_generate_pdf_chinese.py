@@ -47,7 +47,7 @@ def create_combined_html():
                 color: #2c3e50;
                 background: #ffffff;
                 margin: 0;
-                padding: 0.5cm;
+                padding: 0;
             }
             
             
@@ -60,12 +60,17 @@ def create_combined_html():
             h1 {
                 font-size: 22pt;
                 font-weight: 700;
-                margin-top: -1cm;
+                margin-top: 0.8em;  /* Two lines from page top */
                 margin-bottom: 0.3em;
                 color: #2c3e50;
                 border-bottom: 3px solid #2E7D32;
                 padding-bottom: 0.2em;
                 page-break-after: avoid;
+            }
+            
+            /* First h1 on each page (after page break) */
+            .section-break h1:first-child {
+                margin-top: 0.8em;  /* Consistent two lines from page top */
             }
             
             h2 {
@@ -151,6 +156,7 @@ def create_combined_html():
             .section-break {
                 page-break-before: always;
                 padding-top: 0;
+                margin-top: 0;
             }
             
             .news-item {
