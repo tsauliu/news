@@ -1,5 +1,5 @@
-# Step 1: Generate three separate markdown files with Word formatting annotations
-# This script outputs content to three markdown files for manual review
+# Step 1: Generate three separate markdown files
+# This script outputs content to three markdown files for PDF generation
 
 from pdfreport.run import auto_weekly_reports
 auto_weekly_reports()
@@ -20,7 +20,6 @@ sellside_md = f'{output_dir}/{friday_date}_sellside_highlights.md'
 
 with open(sellside_md, 'w', encoding='utf-8') as f:
     # Research reports for the week
-    f.write(f'<!-- WORD_STYLE: heading_level_1 -->\n')
     f.write(f'# Sellside highlights for Week – {friday_date}\n\n')
 
     raw_path = f'./pdfreport/01 raw/{friday_date}'
@@ -84,11 +83,9 @@ with open(sellside_md, 'w', encoding='utf-8') as f:
                 for line in lines:
                     if line.startswith('**'):
                         f.write('\n')
-                        f.write('<!-- WORD_STYLE: summarytitle -->\n')
-                        f.write(f'{line.replace("**","").strip()}\n\n')
+                        f.write(f'## {line.replace("**","").strip()}\n\n')
                     elif len(line) > 10:
-                        f.write('<!-- WORD_STYLE: bullet -->\n')
-                        f.write(f'{line.replace("*","").replace("**","").replace("- ","").replace("#","").strip()}\n\n')
+                        f.write(f'- {line.replace("*","").replace("**","").replace("- ","").replace("#","").strip()}\n')
             
             # Handle PDF file copying and link generation
             parts = file.split('-')
@@ -98,8 +95,7 @@ with open(sellside_md, 'w', encoding='utf-8') as f:
                 source_path = os.path.join(raw_path, file)
                 destination_path = os.path.join(cdn_path, new_filename)
                 shutil.copy2(source_path, destination_path)
-                f.write('<!-- WORD_STYLE: link -->\n')
-                f.write(f'https://auto.bda-news.com/{friday_date}/{file_id}.pdf\n\n')
+                f.write(f'\n[Report Link](https://auto.bda-news.com/{friday_date}/{file_id}.pdf)\n\n')
 
 print(f"Sellside highlights generated: {sellside_md}")
 
@@ -112,7 +108,6 @@ with open(takeaway_md, 'w', encoding='utf-8') as f:
     # Key takeaway for the week
     summary_md = open(f'data/5_summary_mds/{friday_date}_summary.md', 'r', encoding='utf-8').read()
 
-    f.write('<!-- WORD_STYLE: heading_level_1 -->\n')
     f.write(f'# Key News takeaway for Week – {friday_date}\n\n')
     
     # Parse the summary markdown and add headings and paragraphs
@@ -120,11 +115,9 @@ with open(takeaway_md, 'w', encoding='utf-8') as f:
     for line in lines:
         if line.startswith('##'):
             f.write('\n')
-            f.write('<!-- WORD_STYLE: summarytitle -->\n')
-            f.write(f'{line[2:].strip()}\n\n')
+            f.write(f'{line}\n\n')
         elif len(line) > 10 and line.startswith('#'):
-            f.write('<!-- WORD_STYLE: bullet -->\n')
-            f.write(f'{line.replace("*","").replace("**","").replace("- ","").replace("#","").strip()}\n\n')
+            f.write(f'- {line.replace("*","").replace("**","").replace("- ","").replace("#","").strip()}\n')
 
 print(f"Key takeaway generated: {takeaway_md}")
 
@@ -135,7 +128,6 @@ detailed_md = f'{output_dir}/{friday_date}_detailed_news.md'
 
 with open(detailed_md, 'w', encoding='utf-8') as f:
     # Detailed News for the week
-    f.write('<!-- WORD_STYLE: heading_level_1 -->\n')
     f.write(f'# Detailed News for Week – {friday_date}\n\n')
     
     combined_md = open(f'data/4_combined_mds/{friday_date}_combined_news.md', 'r', encoding='utf-8').read()
@@ -169,27 +161,21 @@ with open(detailed_md, 'w', encoding='utf-8') as f:
         if news_df_sector.empty:
             continue
         
-        f.write('<!-- WORD_STYLE: heading_level_2 -->\n')
         f.write(f'## {sector}\n\n')
         
         for _, row in news_df_sector.iterrows():
-            f.write('\n')
-            f.write('<!-- WORD_STYLE: heading_level_3 -->\n')
             f.write(f'### {row["title"]}\n\n')
         
             if 'link' in row and not pd.isna(row['link']):
-                f.write('<!-- WORD_STYLE: link -->\n')
-                f.write(f'{row["link"]}\n\n')
+                f.write(f'[原文链接]({row["link"]})\n\n')
             
             if 'author' in row and not pd.isna(row['author']):
-                f.write('<!-- WORD_STYLE: author -->\n')
                 if 'date' in row and not pd.isna(row['date']):
-                    f.write(f'{row["date"]} {row["author"]}\n\n')
+                    f.write(f'*{row["date"]} - {row["author"]}*\n\n')
                 else:
-                    f.write(f'{row["author"]}\n\n')
+                    f.write(f'*{row["author"]}*\n\n')
             
             if 'content' in row and not pd.isna(row['content']):
-                f.write('<!-- WORD_STYLE: normal_paragraph -->\n')
                 f.write(f'{row["content"]}\n\n')
 
 print(f"Detailed news generated: {detailed_md}")
