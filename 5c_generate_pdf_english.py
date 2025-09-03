@@ -160,10 +160,8 @@ def translate_file_with_gemini(input_file, output_file):
 
 def translate_line(line):
     """Translate a single line"""
-    # Skip only pure links and very short lines
-    if (line.startswith('[') and '](' in line or 
-        line.startswith('*') and line.endswith('*') and len(line) < 50 or
-        len(line.strip()) < 3):
+    # Skip very short lines
+    if len(line.strip()) < 3:
         return line
     
     # For headers, extract text after # symbols and translate
@@ -179,7 +177,53 @@ def translate_line(line):
         else:
             return line
     
-    # Translate the line
+    # Handle links with Chinese text
+    if line.startswith('[') and '](' in line:
+        # Extract link text and URL
+        import re
+        match = re.match(r'\[(.*?)\]\((.*?)\)', line)
+        if match:
+            link_text = match.group(1)
+            url = match.group(2)
+            
+            # Always translate "原文链接" to "Original Article"
+            if link_text == '原文链接':
+                return f'[Original Article]({url})'
+            # Translate link text if it's in Chinese
+            elif any('\u4e00' <= c <= '\u9fff' for c in link_text):
+                translated = translate_with_deepseek(link_text)
+                if translated:
+                    return f'[{translated}]({url})'
+        return line
+    
+    # Handle metadata lines (date and author)
+    if line.startswith('*') and line.endswith('*'):
+        # Extract content between asterisks
+        content = line[1:-1].strip()
+        
+        # Check if it contains Chinese
+        if any('\u4e00' <= c <= '\u9fff' for c in content):
+            # Split by dash to preserve date format
+            parts = content.split(' - ')
+            if len(parts) == 2:
+                date_part = parts[0]
+                author_part = parts[1]
+                
+                # Translate Chinese month names if present
+                date_translated = date_part.replace('年', '-').replace('月', '-').replace('日', '')
+                
+                # Translate author part
+                author_translated = translate_with_deepseek(author_part)
+                if author_translated:
+                    return f'*{date_translated} - {author_translated}*'
+            else:
+                # Just translate the whole content
+                translated = translate_with_deepseek(content)
+                if translated:
+                    return f'*{translated}*'
+        return line
+    
+    # Translate regular lines
     translated = translate_with_deepseek(line)
     return translated if translated else line
 
@@ -201,8 +245,8 @@ def translate_detailed_news_with_deepseek(input_file, output_file):
     
     for i, line in enumerate(lines):
         stripped = line.strip()
-        # Translate non-empty lines that aren't pure links
-        if stripped and not (stripped.startswith('[') and '](' in stripped and stripped.endswith(')')):
+        # Translate all non-empty lines (including links)
+        if stripped:
             lines_to_translate.append(line)
             line_indices.append(i)
     
