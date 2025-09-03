@@ -186,7 +186,7 @@ def create_combined_html():
             
             @page {
                 size: A4;
-                margin: 2cm 0.5cm;
+                margin: 2cm 1cm;
                 
                 @bottom-center {
                     content: counter(page);
@@ -285,7 +285,7 @@ def generate_pdf():
         HTML(string=html_content).write_pdf(
             output_file,
             stylesheets=[CSS(string='''
-                @page { size: A4; margin: 2cm 0.5cm; }
+                @page { size: A4; margin: 2cm 1cm; }
             ''')]
         )
         
