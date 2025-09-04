@@ -353,7 +353,7 @@ def generate_podcast_pdf(input_file, output_file):
 def main():
     """Main function to convert all translated podcast markdown files to PDFs"""
     
-    # Configuration
+    # Use specific date for podcast processing (hardcoded as requested)
     friday_date = '2025-08-29'
     
     # Directory paths

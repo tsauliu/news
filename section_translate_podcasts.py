@@ -203,7 +203,7 @@ def translate_podcast_by_sections(input_file, output_file):
 
 def main():
     """Main function to translate all podcasts"""
-    friday_date = '2025-08-29'
+    from parameters import friday_date
     podcast_dir = Path('podcast') / friday_date
     podcast_eng_dir = Path('podcast') / f'{friday_date}_ENG'
     
