@@ -294,6 +294,66 @@ def translate_detailed_news_with_deepseek(input_file, output_file):
     print(f"DeepSeek translation completed: {output_file}")
     return True
 
+def preprocess_podcast_content(content):
+    """Preprocess podcast content to remove timestamp links before translation
+    
+    Removes patterns like:
+    - [(00:00)](https://podwise.ai/dashboard/episodes/4876106?locate=0)
+    - [(1:14:02)](https://podwise.ai/dashboard/episodes/4211907?locate=4442)
+    """
+    import re
+    
+    # Remove timestamp links with format [(HH:MM:SS)] or [(MM:SS)] or [(HH:MM)]
+    # Pattern matches: [(digits:digits)] or [(digits:digits:digits)] followed by URL
+    pattern = r'\[\([0-9]+(?::[0-9]+){1,2}\)\]\([^)]+\)'
+    
+    # Replace all timestamp links with empty string
+    cleaned = re.sub(pattern, '', content)
+    
+    # Also remove any standalone timestamps that might remain
+    # Pattern for just the timestamp part without URL: [(00:00)]
+    pattern2 = r'\[\([0-9]+(?::[0-9]+){1,2}\)\]'
+    cleaned = re.sub(pattern2, '', cleaned)
+    
+    # Clean up any double spaces that might result from removals
+    cleaned = re.sub(r'  +', ' ', cleaned)
+    
+    # Clean up any leading spaces at the start of lines
+    cleaned = re.sub(r'^\s+', '', cleaned, flags=re.MULTILINE)
+    
+    return cleaned
+
+def translate_podcast_file_with_gemini(input_file, output_file):
+    """Translate podcast file using Gemini with preprocessing"""
+    print(f"Translating {input_file} with Gemini (with preprocessing)...")
+    
+    if not os.path.exists(input_file):
+        print(f"Warning: File {input_file} not found, skipping...")
+        return False
+    
+    # Read the entire file
+    with open(input_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Preprocess to remove timestamp links
+    print("  Removing timestamp links...")
+    content = preprocess_podcast_content(content)
+    
+    # Translate the cleaned content
+    print("  Translating cleaned content...")
+    translated_content = translate_with_gemini(content)
+    
+    if not translated_content:
+        print(f"Warning: Translation failed for {input_file}")
+        return False
+    
+    # Write to output file
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(translated_content)
+    
+    print(f"Gemini translation completed: {output_file}")
+    return True
+
 def translate_podcast_files():
     """Translate podcast markdown files from YYYY-MM-DD to YYYY-MM-DD_ENG"""
     
@@ -330,8 +390,8 @@ def translate_podcast_files():
         
         print(f"\nTranslating podcast: {md_file.name}")
         
-        # Use Gemini for podcast translation (full file translation)
-        if translate_file_with_gemini(md_file, output_file):
+        # Use specialized podcast translation with preprocessing
+        if translate_podcast_file_with_gemini(md_file, output_file):
             success_count += 1
             print(f"✓ Translated: {md_file.name}")
         else:
