@@ -223,16 +223,13 @@ takeaway_sections = parse_key_takeaway_sections(key_takeaway)
 first_section = True
 for section_name, bullets in takeaway_sections:
     if not first_section:
-        # Close previous list and add spacing before new section
-        html_body += """
-</ul>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
+        # Close previous list
+        html_body += """</ul>
 """
     
-    # Add section header as paragraph text with underline (not bold, not bullet)
+    # Add section header as paragraph text with underline (colon not underlined)
     html_body += f"""
-<p class=MsoNormal><u><span style='font-family:等线'>{section_name}：</span></u></p>
+<p class=MsoNormal><u><span style='font-family:等线'>{section_name}</span></u><span style='font-family:等线'>：</span></p>
 
 <ul style='margin-top:0cm' type=disc>"""
     
@@ -256,13 +253,11 @@ html_body += """
 
 <p class=MsoNormal><b><u><span lang=EN-US style='font-family:"Calibri",sans-serif'>Sellside highlights for Week – """ + test_date + """<o:p></o:p></span></u></b></p>
 
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
-
 <ul style='margin-top:0cm' type=disc>"""
 
 # Parse and add sellside reports with new format
 sellside_reports = parse_sellside_reports(sellside)
-for report_title, bullets, link in sellside_reports[:10]:
+for report_title, bullets, link in sellside_reports:
     # Format: Date,Firm: Title (URL)
     if ',' in report_title:
         parts = report_title.split(',', 1)
