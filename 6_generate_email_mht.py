@@ -176,6 +176,7 @@ xmlns:w="urn:schemas-microsoft-com:office:word"
 xmlns="http://www.w3.org/TR/REC-html40">
 
 <head>
+<title>Autonomous Driving News Summary 2025 08 29</title>
 <meta http-equiv=Content-Type content="text/html; charset=utf-8">
 <meta name=Generator content="Microsoft Word 15">
 <meta name=Originator content="Microsoft Word 15">
@@ -204,11 +205,15 @@ mso-font-kerning:1.0pt;}
 
 <div class=WordSection1>
 
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Hi Pengfei, Caiyao,<o:p></o:p></span></p>
+<p class=MsoNormal align=center style='text-align:center'><b><span lang=EN-US style='font-size:14.0pt;font-family:"Calibri",sans-serif'>Autonomous Driving News Summary 2025 08 29<o:p></o:p></span></b></p>
 
 <p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span style='font-family:等线'>以下是本周的</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>AI news update</span><span style='font-family:等线'>的关键要点总结，详细信息请参考完整</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>pdf</span><span style='font-family:等线'>文档。如有任何问题请随时联系，谢谢！</span><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Hi Pengfei and Caiyao,<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span style='font-family:等线'>请查收我们本周的</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>Autonomous Driving News Update</span><span style='font-family:等线'>，</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>key topics</span><span style='font-family:等线'>总结如下，详细信息请查阅附件中完整的</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>news brief</span><span style='font-family:等线'>。有任何问题请随时联系我们，谢谢！</span><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
 
