@@ -215,18 +215,26 @@ mso-font-kerning:1.0pt;}
 <p class=MsoNormal><b><u><span lang=EN-US style='font-family:"Calibri",sans-serif'>Key News takeaway for Week – """ + test_date + """<o:p></o:p></span></u></b></p>
 
 <p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
-
-<ul style='margin-top:0cm' type=disc>"""
+"""
 
 # Parse and add key takeaway sections with ALL bullets
 takeaway_sections = parse_key_takeaway_sections(key_takeaway)
 
+first_section = True
 for section_name, bullets in takeaway_sections:
-    # Add section header (not bold)
+    if not first_section:
+        # Close previous list and add spacing before new section
+        html_body += """
+</ul>
+
+<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
+"""
+    
+    # Add section header as paragraph text with underline (not bold, not bullet)
     html_body += f"""
- <li class=MsoNormal style='text-align:justify;mso-list:l1 level1 lfo1'>
-    <u><span style='font-family:等线'>{section_name}</span></u>
- </li>"""
+<p class=MsoNormal><u><span style='font-family:等线'>{section_name}：</span></u></p>
+
+<ul style='margin-top:0cm' type=disc>"""
     
     # Add ALL bullets for this section
     for bullet in bullets:
@@ -237,7 +245,9 @@ for section_name, bullets in takeaway_sections:
         
         font = '等线' if is_chinese else '"Calibri",sans-serif'
         html_body += f"""
- <li class=MsoNormal style='text-align:justify;mso-list:l1 level2 lfo1'><span style='font-family:{font}'>{bullet}</span></li>"""
+ <li class=MsoNormal style='text-align:justify;mso-list:l1 level1 lfo1'><span style='font-family:{font}'>{bullet}</span></li>"""
+    
+    first_section = False
 
 html_body += """
 </ul>
