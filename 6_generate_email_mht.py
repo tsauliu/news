@@ -76,7 +76,36 @@ for file in sorted(os.listdir(podcast_dir)):
         podcast_name, episode_title, summary, takeaways = extract_podcast_essentials(f'{podcast_dir}/{file}')
         podcast_summaries.append((podcast_name, episode_title, summary, takeaways[:5]))
 
-# Convert markdown to simple bullets
+# Parse markdown to extract sections and bullets
+def parse_key_takeaway_sections(text):
+    lines = text.split('\n')
+    sections = []
+    current_section = None
+    current_bullets = []
+    
+    for line in lines:
+        if line.startswith('##'):
+            # Save previous section if exists
+            if current_section and current_bullets:
+                sections.append((current_section, current_bullets))
+            # Start new section
+            current_section = line.replace('##', '').replace('：', '').strip()
+            current_bullets = []
+        elif line.strip().startswith('- '):
+            # Add bullet to current section
+            bullet_text = line.strip()[2:]
+            # Remove markdown formatting
+            bullet_text = bullet_text.replace('**', '').replace('[', '').replace(']', '').replace('(', ' ').replace(')', '')
+            if bullet_text:
+                current_bullets.append(bullet_text)
+    
+    # Don't forget the last section
+    if current_section and current_bullets:
+        sections.append((current_section, current_bullets))
+    
+    return sections
+
+# Convert markdown to simple bullets (for backwards compatibility)
 def md_to_simple_bullets(text):
     lines = text.split('\n')
     bullets = []
@@ -189,17 +218,26 @@ mso-font-kerning:1.0pt;}
 
 <ul style='margin-top:0cm' type=disc>"""
 
-# Add key takeaway bullets
-takeaway_bullets = md_to_simple_bullets(key_takeaway)
-for bullet in takeaway_bullets[:15]:
-    # Detect if content is primarily Chinese or English
-    chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', bullet))
-    total_chars = len(bullet)
-    is_chinese = chinese_chars > total_chars * 0.3
-    
-    font = '等线' if is_chinese else '"Calibri",sans-serif'
+# Parse and add key takeaway sections with ALL bullets
+takeaway_sections = parse_key_takeaway_sections(key_takeaway)
+
+for section_name, bullets in takeaway_sections:
+    # Add section header (not bold)
     html_body += f"""
- <li class=MsoNormal style='text-align:justify;mso-list:l1 level1 lfo1'><span style='font-family:{font}'>{bullet}</span></li>"""
+ <li class=MsoNormal style='text-align:justify;mso-list:l1 level1 lfo1'>
+    <u><span style='font-family:等线'>{section_name}</span></u>
+ </li>"""
+    
+    # Add ALL bullets for this section
+    for bullet in bullets:
+        # Detect if content is primarily Chinese or English
+        chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', bullet))
+        total_chars = len(bullet)
+        is_chinese = chinese_chars > total_chars * 0.3
+        
+        font = '等线' if is_chinese else '"Calibri",sans-serif'
+        html_body += f"""
+ <li class=MsoNormal style='text-align:justify;mso-list:l1 level2 lfo1'><span style='font-family:{font}'>{bullet}</span></li>"""
 
 html_body += """
 </ul>
@@ -346,8 +384,11 @@ def create_mht_improved(html_content, output_path):
 output_file = f'data/7_emails/{test_date}_email.mht'
 create_mht_improved(html_body, output_file)
 
+# Calculate total bullets from all sections
+total_bullets = sum(len(bullets) for _, bullets in takeaway_sections)
+
 print(f"✅ MHT Email generated: {output_file}")
 print(f"📊 Content included:")
-print(f"   - Key takeaways: {len(takeaway_bullets)} points")
+print(f"   - Key takeaways: {len(takeaway_sections)} sections, {total_bullets} total points")
 print(f"   - Sellside reports: {len(sellside_reports)} items with links")
 print(f"   - Podcast summaries: {len(podcast_summaries)} episodes")
