@@ -283,7 +283,7 @@ for report_title, bullets, link in sellside_reports:
     if bullets:
         html_body += """
     <ul style='margin-top:0cm' type=circle>"""
-        for sub_bullet in bullets[:2]:  # Limit to 2 key points per report
+        for sub_bullet in bullets:  # Show all key points per report
             html_body += f"""
       <li class=MsoNormal style='text-align:justify;mso-list:l0 level2 lfo2'><span style='font-family:等线'>{sub_bullet}</span></li>"""
         html_body += """
