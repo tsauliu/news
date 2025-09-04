@@ -250,11 +250,10 @@ html_body += """
 
 # Add podcast summaries with improved format
 for podcast_name, episode_title, summary, takeaways in podcast_summaries:
-    # Format as: [Podcast Name] Episode Title：Summary
+    # Format as: [Podcast Name] Episode Title：Summary (all underlined)
     html_body += f"""
  <li class=MsoNormal style='text-align:justify;mso-list:l3 level1 lfo5'>
-    <span style='font-family:等线'>[{podcast_name}] </span>
-    <u><span style='font-family:等线'>{episode_title}</span></u>
+    <u><span style='font-family:等线'>[{podcast_name}] {episode_title}</span></u>
     <span style='font-family:等线'>：{summary}</span>
  </li>"""
     
