@@ -16,7 +16,7 @@ from apikey import gemini_key
 
 # Configure Gemini
 genai.configure(api_key=gemini_key)
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 def preprocess_content(content):
     """Remove timestamp links before translation"""
@@ -65,14 +65,25 @@ def split_by_sections(content):
     
     return sections
 
+def has_significant_chinese(text):
+    """Check if text contains significant Chinese content (more than just names/terms)"""
+    import re
+    chinese_chars = re.findall(r'[\u4e00-\u9fff]', text)
+    return len(chinese_chars) > 10  # More than 10 Chinese characters indicates incomplete translation
+
 def translate_section(section_content, section_name, retry_count=3):
     """Translate a single section with retries"""
     prompt = f"""
-Translate the following Chinese text to English. 
-Maintain the markdown formatting.
-Keep all markdown headers (# symbols).
-Translate naturally and accurately.
-This is the {section_name} section of a podcast transcript.
+Translate the following Chinese text to COMPLETE English. 
+
+IMPORTANT INSTRUCTIONS:
+1. Translate ALL Chinese text to English, including names, places, and technical terms
+2. For Chinese names, provide English transliteration AND keep original in parentheses: e.g., "Yu Chengdong (余承东)" 
+3. For Chinese companies/brands, translate to English equivalents where possible
+4. Maintain all markdown formatting exactly (# headers, **bold**, etc.)
+5. Translate speaker names to English equivalents
+6. Do NOT leave any Chinese sentences or paragraphs untranslated
+7. This is the {section_name} section of a podcast transcript
 
 Text to translate:
 {section_content}
@@ -85,21 +96,34 @@ Text to translate:
                                                generation_config={'temperature': 0.3})
             translated = response.text
             
-            # Basic validation
-            if translated and len(translated) > 50:
-                print(f"  ✓ {section_name} translated successfully")
-                return translated
-            else:
-                print(f"  ✗ Translation seems too short, retrying...")
+            # Improved validation
+            if not translated or len(translated) < 50:
+                print(f"  ✗ Translation too short ({len(translated) if translated else 0} chars), retrying...")
+                continue
+                
+            # Check for significant untranslated Chinese content
+            if has_significant_chinese(translated):
+                print(f"  ✗ Translation contains significant Chinese text, retrying...")
+                continue
+            
+            # Check that translation is not just the original
+            if translated.strip() == section_content.strip():
+                print(f"  ✗ Translation appears unchanged, retrying...")
+                continue
+                
+            print(f"  ✓ {section_name} translated successfully ({len(translated):,} chars)")
+            return translated
                 
         except Exception as e:
             print(f"  ✗ Error translating {section_name}: {e}")
             if attempt < retry_count - 1:
-                time.sleep(5)
+                print(f"  Waiting 10 seconds before retry...")
+                time.sleep(10)  # Longer wait for rate limiting
     
-    # If all retries failed, return original with a note
-    print(f"  ✗ Failed to translate {section_name} after {retry_count} attempts")
-    return f"[Translation failed]\n{section_content}"
+    # If all retries failed, raise an exception instead of continuing
+    error_msg = f"Critical Error: Failed to translate {section_name} after {retry_count} attempts"
+    print(f"  ✗ {error_msg}")
+    raise RuntimeError(error_msg)
 
 def translate_podcast_by_sections(input_file, output_file):
     """Translate podcast file section by section"""
@@ -133,20 +157,21 @@ def translate_podcast_by_sections(input_file, output_file):
         print(f"    Section size: {len(section_content):,} bytes")
         
         # Special handling for large sections
-        if section_name == '# Transcript' and len(section_content) > 30000:
+        if section_name == '# Transcript' and len(section_content) > 25000:
             print("    Transcript section is large, splitting into chunks...")
             
-            # Split transcript by paragraphs
+            # Split transcript by paragraphs or sections
             paragraphs = section_content.split('\n\n')
-            header = paragraphs[0]  # Keep the "# Transcript" header
+            header = paragraphs[0] if paragraphs[0].startswith('#') else '# Transcript'
+            content_paras = paragraphs[1:] if paragraphs[0].startswith('#') else paragraphs
             
-            # Process in chunks of ~10KB
+            # Process in smaller chunks (~8KB) to be safer with API limits
             chunks = []
             current_chunk = []
             current_size = 0
-            max_chunk_size = 10000
+            max_chunk_size = 8000
             
-            for para in paragraphs[1:]:  # Skip header
+            for para in content_paras:
                 para_size = len(para)
                 if current_size + para_size > max_chunk_size and current_chunk:
                     chunks.append('\n\n'.join(current_chunk))
@@ -159,24 +184,38 @@ def translate_podcast_by_sections(input_file, output_file):
             if current_chunk:
                 chunks.append('\n\n'.join(current_chunk))
             
-            print(f"    Split into {len(chunks)} chunks")
+            print(f"    Split into {len(chunks)} chunks (avg size: {sum(len(c) for c in chunks)//len(chunks):,} chars)")
             
-            # Translate each chunk
-            translated_chunks = [header]  # Start with header
-            for i, chunk in enumerate(chunks):
-                print(f"    Translating chunk {i+1}/{len(chunks)} ({len(chunk):,} bytes)...")
-                translated_chunk = translate_section(chunk, f"Transcript chunk {i+1}")
-                translated_chunks.append(translated_chunk)
-                time.sleep(2)  # Rate limiting
-            
-            translated_sections[section_name] = '\n\n'.join(translated_chunks)
+            # Translate each chunk with better error handling
+            translated_chunks = []
+            try:
+                # Translate header first
+                translated_header = translate_section(header, "Transcript header")
+                translated_chunks.append(translated_header)
+                
+                # Translate each content chunk
+                for i, chunk in enumerate(chunks):
+                    print(f"    Processing chunk {i+1}/{len(chunks)} ({len(chunk):,} chars)...")
+                    translated_chunk = translate_section(chunk, f"Transcript chunk {i+1}")
+                    translated_chunks.append(translated_chunk)
+                    time.sleep(3)  # Longer rate limiting between chunks
+                
+                translated_sections[section_name] = '\n\n'.join(translated_chunks)
+                
+            except RuntimeError as e:
+                print(f"  ✗ Failed to translate transcript chunks: {e}")
+                raise  # Re-raise to stop the entire process
             
         else:
             # Translate normally for smaller sections
-            translated_sections[section_name] = translate_section(
-                section_content, section_name
-            )
-            time.sleep(2)  # Rate limiting
+            try:
+                translated_sections[section_name] = translate_section(
+                    section_content, section_name
+                )
+                time.sleep(3)  # Rate limiting
+            except RuntimeError as e:
+                print(f"  ✗ Critical error translating {section_name}: {e}")
+                return False
     
     # Reassemble the document
     print("\n  Reassembling translated document...")
@@ -186,8 +225,19 @@ def translate_podcast_by_sections(input_file, output_file):
     for header in section_order:
         if header in translated_sections:
             final_content.append(translated_sections[header])
+        else:
+            print(f"  ⚠ Warning: Section {header} was not found in translated content")
+    
+    if not final_content:
+        print("  ✗ No sections were successfully translated")
+        return False
     
     full_translation = '\n\n'.join(final_content)
+    
+    # Final validation
+    if has_significant_chinese(full_translation):
+        print("  ⚠ Warning: Final document still contains significant Chinese text")
+        # Don't fail, but warn user
     
     # Save the translation
     try:
