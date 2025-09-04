@@ -14,18 +14,25 @@ os.makedirs('data/7_emails', exist_ok=True)
 key_takeaway = open(f'data/6_final_mds/{test_date}_key_takeaway.md', 'r', encoding='utf-8').read()
 sellside = open(f'data/6_final_mds/{test_date}_sellside_highlights.md', 'r', encoding='utf-8').read()
 
-# Extract only Summary and Takeaways from podcasts
+# Extract Podcast name, Summary and Takeaways from podcasts
 def extract_podcast_essentials(podcast_path):
     content = open(podcast_path, 'r', encoding='utf-8').read()
     lines = content.split('\n')
     
+    podcast_name = ""
+    episode_title = ""
     summary = ""
     takeaways = []
+    in_info = False
     in_summary = False
     in_takeaways = False
     
     for line in lines:
-        if line.strip() == '# Summary':
+        if line.strip() == '# Info':
+            in_info = True
+            continue
+        elif line.strip() == '# Summary':
+            in_info = False
             in_summary = True
             in_takeaways = False
             continue
@@ -34,25 +41,30 @@ def extract_podcast_essentials(podcast_path):
             in_takeaways = True
             continue
         elif line.strip().startswith('# '):
+            in_info = False
             in_summary = False
             in_takeaways = False
             continue
         
-        if in_summary and line.strip():
+        if in_info:
+            if line.startswith('- Podcast:'):
+                podcast_name = line.replace('- Podcast:', '').strip()
+            elif line.startswith('- Episode:'):
+                episode_title = line.replace('- Episode:', '').strip()
+        elif in_summary and line.strip():
             summary = line.strip()
         elif in_takeaways and line.strip().startswith('*'):
             takeaways.append(line.strip()[1:].strip())
     
-    return summary, takeaways
+    return podcast_name, episode_title, summary, takeaways
 
 # Process podcasts
 podcast_summaries = []
 podcast_dir = f'podcast/{test_date}'
 for file in sorted(os.listdir(podcast_dir)):
     if file.endswith('.md'):
-        title = file.replace('.md', '')
-        summary, takeaways = extract_podcast_essentials(f'{podcast_dir}/{file}')
-        podcast_summaries.append((title, summary, takeaways[:5]))
+        podcast_name, episode_title, summary, takeaways = extract_podcast_essentials(f'{podcast_dir}/{file}')
+        podcast_summaries.append((podcast_name, episode_title, summary, takeaways[:5]))
 
 # Convert markdown to simple bullets
 def md_to_simple_bullets(text):
@@ -237,10 +249,12 @@ html_body += """
 <ul style='margin-top:0cm' type=disc>"""
 
 # Add podcast summaries with improved format
-for title, summary, takeaways in podcast_summaries:
+for podcast_name, episode_title, summary, takeaways in podcast_summaries:
+    # Format as: [Podcast Name] Episode Title：Summary
     html_body += f"""
  <li class=MsoNormal style='text-align:justify;mso-list:l3 level1 lfo5'>
-    <u><span style='font-family:等线'>{title}</span></u>
+    <span style='font-family:等线'>[{podcast_name}] </span>
+    <u><span style='font-family:等线'>{episode_title}</span></u>
     <span style='font-family:等线'>：{summary}</span>
  </li>"""
     
@@ -248,11 +262,10 @@ for title, summary, takeaways in podcast_summaries:
         html_body += """
  <ul style='margin-top:0cm' type=circle>"""
         for takeaway in takeaways[:3]:
-            # Prefix each takeaway with podcast name
-            prefixed_takeaway = f"{title}: {takeaway}"
+            # Clean takeaways without any prefix
             html_body += f"""
   <li class=MsoNormal style='text-align:justify;mso-list:l3 level2 lfo5'>
-     <span style='font-family:等线'>{prefixed_takeaway}</span>
+     <span style='font-family:等线'>{takeaway}</span>
   </li>"""
         html_body += """
  </ul>"""
