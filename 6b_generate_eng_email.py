@@ -158,7 +158,7 @@ def parse_key_takeaway_sections(text):
             if current_section and current_bullets:
                 sections.append((current_section, current_bullets))
             # Start new section
-            current_section = line.replace('##', '').replace('：', ':').strip()
+            current_section = line.replace('##', '').replace('：', ':').rstrip(':').strip()
             current_bullets = []
         elif line.strip().startswith('- '):
             # Add bullet to current section
