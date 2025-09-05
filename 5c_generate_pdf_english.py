@@ -294,115 +294,6 @@ def translate_detailed_news_with_deepseek(input_file, output_file):
     print(f"DeepSeek translation completed: {output_file}")
     return True
 
-def preprocess_podcast_content(content):
-    """Preprocess podcast content to remove timestamp links before translation
-    
-    Removes patterns like:
-    - [(00:00)](https://podwise.ai/dashboard/episodes/4876106?locate=0)
-    - [(1:14:02)](https://podwise.ai/dashboard/episodes/4211907?locate=4442)
-    """
-    import re
-    
-    # Remove timestamp links with format [(HH:MM:SS)] or [(MM:SS)] or [(HH:MM)]
-    # Pattern matches: [(digits:digits)] or [(digits:digits:digits)] followed by URL
-    pattern = r'\[\([0-9]+(?::[0-9]+){1,2}\)\]\([^)]+\)'
-    
-    # Replace all timestamp links with empty string
-    cleaned = re.sub(pattern, '', content)
-    
-    # Also remove any standalone timestamps that might remain
-    # Pattern for just the timestamp part without URL: [(00:00)]
-    pattern2 = r'\[\([0-9]+(?::[0-9]+){1,2}\)\]'
-    cleaned = re.sub(pattern2, '', cleaned)
-    
-    # Clean up any double spaces that might result from removals
-    cleaned = re.sub(r'  +', ' ', cleaned)
-    
-    # Clean up any leading spaces at the start of lines
-    cleaned = re.sub(r'^\s+', '', cleaned, flags=re.MULTILINE)
-    
-    return cleaned
-
-def translate_podcast_file_with_gemini(input_file, output_file):
-    """Translate podcast file using Gemini with preprocessing"""
-    print(f"Translating {input_file} with Gemini (with preprocessing)...")
-    
-    if not os.path.exists(input_file):
-        print(f"Warning: File {input_file} not found, skipping...")
-        return False
-    
-    # Read the entire file
-    with open(input_file, 'r', encoding='utf-8') as f:
-        content = f.read()
-    
-    # Preprocess to remove timestamp links
-    print("  Removing timestamp links...")
-    content = preprocess_podcast_content(content)
-    
-    # Translate the cleaned content
-    print("  Translating cleaned content...")
-    translated_content = translate_with_gemini(content)
-    
-    if not translated_content:
-        print(f"Warning: Translation failed for {input_file}")
-        return False
-    
-    # Write to output file
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(translated_content)
-    
-    print(f"Gemini translation completed: {output_file}")
-    return True
-
-def translate_podcast_files():
-    """Translate podcast markdown files from YYYY-MM-DD to YYYY-MM-DD_ENG"""
-    
-    podcast_dir = Path('podcast') / friday_date
-    podcast_eng_dir = Path('podcast') / f'{friday_date}_ENG'
-    
-    # Check if source podcast directory exists
-    if not podcast_dir.exists():
-        print(f"\nℹ️ Podcast directory {podcast_dir} not found, skipping podcast translation")
-        return False
-    
-    # Create English podcast directory
-    podcast_eng_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Get all markdown files in the podcast directory
-    md_files = list(podcast_dir.glob('*.md'))
-    
-    if not md_files:
-        print(f"\nℹ️ No markdown files found in {podcast_dir}")
-        return False
-    
-    print(f"\n=== Translating Podcast Files ===")
-    print(f"Found {len(md_files)} podcast files to translate")
-    
-    success_count = 0
-    for md_file in md_files:
-        output_file = podcast_eng_dir / md_file.name
-        
-        # Skip if English version already exists
-        if output_file.exists():
-            print(f"✓ English version already exists: {output_file.name}")
-            success_count += 1
-            continue
-        
-        print(f"\nTranslating podcast: {md_file.name}")
-        
-        # Use specialized podcast translation with preprocessing
-        if translate_podcast_file_with_gemini(md_file, output_file):
-            success_count += 1
-            print(f"✓ Translated: {md_file.name}")
-        else:
-            print(f"✗ Failed to translate: {md_file.name}")
-    
-    print(f"\n=== Podcast Translation Summary ===")
-    print(f"Successfully translated {success_count}/{len(md_files)} podcast files")
-    print(f"English podcasts saved to: {podcast_eng_dir}")
-    
-    return success_count == len(md_files)
-
 def create_combined_english_html():
     """Create combined HTML from English markdown files"""
     
@@ -681,11 +572,8 @@ def generate_english_pdf():
     output_dir = Path('data/7_pdfs')
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Translate podcast files first (if they exist)
-    translate_podcast_files()
-    
     # Generate HTML content (includes translation if needed)
-    print("\n📝 Generating English content...")
+    print("📝 Generating English content...")
     html_content = create_combined_english_html()
     
     # Generate output filename
@@ -724,7 +612,6 @@ def main():
     if success:
         print("\n✨ English PDF document generated successfully!")
         print("Note: Content has been translated from Chinese to English")
-        print("Note: Podcast files (if any) have been translated to podcast/{}_ENG".format(friday_date))
     else:
         print("\n⚠️ Error occurred during PDF generation, please check logs")
         sys.exit(1)
