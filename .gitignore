@@ -14,5 +14,6 @@ test
 *.csv
 *.json
 *.html
-*.xml*.mht
+*.xml
+*.mht
 *log
