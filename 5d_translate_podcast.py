@@ -66,6 +66,24 @@ CRITICAL REQUIREMENTS:
 5. Preserve all line breaks and paragraph structure
 6. If text is already in English, keep it unchanged
 
+IMPORTANT: You MUST translate EVERY SINGLE Chinese character to English, including:
+- Metadata fields like "播客" (Podcast), "节目" (Episode)
+- Section headers and titles
+- Any Chinese punctuation (，。！？) should be replaced with English equivalents (,.!?)
+- Chinese quotes "「」" should become English quotes ""
+- ALL Chinese text MUST be translated - do not leave ANY Chinese characters
+
+Common translations:
+- 播客 → Podcast
+- 节目/集 → Episode
+- 主持人 → Host
+- 嘉宾 → Guest
+- 时间 → Time/Duration
+- 简介 → Summary/Introduction
+- 内容 → Content
+- 讨论 → Discussion
+- 观点 → Viewpoint/Opinion
+
 Translate the following text:"""
     
     # Translate each chunk
