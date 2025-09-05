@@ -28,7 +28,7 @@ def deepseek_model(prompt,content):
 from google import genai
 from apikey import gemini_key, gemini_key2, gemini_key3
 
-def gemini_model(prompt,content):
+def gemini_model(prompt,content,model="gemini-2.5-pro"):
     import time
     
     # List of API keys to cycle through on retries
@@ -43,7 +43,7 @@ def gemini_model(prompt,content):
             
             client = genai.Client(api_key=current_key)
             response = client.models.generate_content(
-                model="gemini-2.5-pro", contents=prompt+'\n -- \n'+content
+                model=model, contents=prompt+'\n -- \n'+content
             )
             return response.text
         except Exception as e:
