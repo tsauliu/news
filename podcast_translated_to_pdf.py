@@ -10,9 +10,6 @@ Usage:
     # Translate only
     python 5d_podcast_processor.py --translate-only
     
-    # Generate PDFs only (Chinese)
-    python 5d_podcast_processor.py --pdf-only-cn
-    
     # Generate PDFs only (English)
     python 5d_podcast_processor.py --pdf-only-en
     
@@ -539,7 +536,6 @@ def main():
 Examples:
   python 5d_podcast_processor.py                    # Full processing (translate + PDFs)
   python 5d_podcast_processor.py --translate-only   # Only translate
-  python 5d_podcast_processor.py --pdf-only-cn      # Only generate Chinese PDFs
   python 5d_podcast_processor.py --pdf-only-en      # Only generate English PDFs
   python 5d_podcast_processor.py --date 2025-09-05  # Use specific date
         """
@@ -549,8 +545,6 @@ Examples:
                         help=f'Date for podcast directory (default: {friday_date})')
     parser.add_argument('--translate-only', action='store_true',
                         help='Only translate Chinese to English')
-    parser.add_argument('--pdf-only-cn', action='store_true',
-                        help='Only generate PDFs for Chinese podcasts')
     parser.add_argument('--pdf-only-en', action='store_true',
                         help='Only generate PDFs for English podcasts')
     parser.add_argument('--source-dir', type=str,
@@ -578,11 +572,7 @@ Examples:
     print("=" * 60)
     
     # Process based on arguments
-    if args.pdf_only_cn:
-        # Only generate Chinese PDFs
-        success = generate_pdfs(source_dir, language='cn')
-        
-    elif args.pdf_only_en:
+    if args.pdf_only_en:
         # Only generate English PDFs
         if not target_dir.exists():
             print(f"❌ English directory not found: {target_dir}")
@@ -601,18 +591,14 @@ Examples:
         # Step 1: Translate Chinese to English
         translate_success = translate_podcasts(source_dir, target_dir)
         
-        # Step 2: Generate Chinese PDFs
-        cn_pdf_success = generate_pdfs(source_dir, language='cn')
-        
-        # Step 3: Generate English PDFs
+        # Step 2: Generate English PDFs
         en_pdf_success = generate_pdfs(target_dir, language='en')
         
-        success = translate_success and cn_pdf_success and en_pdf_success
+        success = translate_success and en_pdf_success
         
         print("\n" + "=" * 60)
         print("📊 Summary:")
         print(f"  ✓ Translation: {'Success' if translate_success else 'Failed'}")
-        print(f"  ✓ Chinese PDFs: {'Success' if cn_pdf_success else 'Failed'}")
         print(f"  ✓ English PDFs: {'Success' if en_pdf_success else 'Failed'}")
     
     print("\n" + "=" * 60)
