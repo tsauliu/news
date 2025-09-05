@@ -89,7 +89,7 @@ def parse_consolidated_podcast_summary(file_path):
         if line.startswith('## '):
             # Save previous podcast if exists
             if current_podcast:
-                podcasts.append((current_podcast['name'], current_podcast['title'], current_summary, current_bullets[:5]))
+                podcasts.append((current_podcast['name'], current_podcast['title'], current_summary, current_bullets))
             
             # Parse new podcast header
             header = line[3:].strip()  # Remove '## '
@@ -122,7 +122,7 @@ def parse_consolidated_podcast_summary(file_path):
     
     # Don't forget the last podcast
     if current_podcast:
-        podcasts.append((current_podcast['name'], current_podcast['title'], current_summary, current_bullets[:5]))
+        podcasts.append((current_podcast['name'], current_podcast['title'], current_summary, current_bullets))
     
     return podcasts
 
@@ -390,7 +390,7 @@ for podcast_name, episode_title, summary, takeaways in podcast_summaries:
     if takeaways:
         html_body += """
  <ul style='margin-top:0cm' type=circle>"""
-        for takeaway in takeaways[:3]:
+        for takeaway in takeaways:
             # Clean takeaways without any prefix
             html_body += f"""
   <li class=MsoNormal style='text-align:justify;mso-list:l3 level2 lfo5'>
