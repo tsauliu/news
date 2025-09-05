@@ -371,7 +371,7 @@ html_body += """
 
 <p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><b><u><span lang=EN-US style='font-family:"Calibri",sans-serif'>Podcasts:<o:p></o:p></span></u></b></p>
+<p class=MsoNormal><b><u><span lang=EN-US style='font-family:"Calibri",sans-serif'>Podcasts highlights for Week – """ + test_date + """<o:p></o:p></span></u></b></p>
 
 <ul style='margin-top:0cm' type=disc>"""
 
