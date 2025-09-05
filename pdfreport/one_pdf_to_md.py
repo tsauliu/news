@@ -37,11 +37,22 @@ def pdf_to_md(friday_date, max_workers=8):
     source_path = os.path.expanduser(f'~/Dropbox/MyServerFiles/AutoWeekly/{friday_date}')
     raw_path = f'pdfreport/01 raw/{friday_date}'
 
+    # Create raw_path if it doesn't exist
+    os.makedirs(raw_path, exist_ok=True)
+    
+    # Copy PDFs from source to raw path if source exists
     if os.path.exists(source_path):
-        if not os.path.exists(raw_path):
-            shutil.move(source_path, raw_path)
-    else:
-        pass
+        source_pdfs = [f for f in os.listdir(source_path) if f.lower().endswith('.pdf')]
+        if source_pdfs:
+            print(f"Found {len(source_pdfs)} PDFs in {source_path}")
+            for pdf_file in source_pdfs:
+                source_file = os.path.join(source_path, pdf_file)
+                dest_file = os.path.join(raw_path, pdf_file)
+                if not os.path.exists(dest_file):
+                    shutil.copy2(source_file, dest_file)
+                    print(f"Copied: {pdf_file}")
+                else:
+                    print(f"Skipping existing: {pdf_file}")
 
     output_path = f'pdfreport/02 markdown/{friday_date}'
 

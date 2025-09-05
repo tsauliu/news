@@ -13,6 +13,24 @@ import shutil
 output_dir = f'data/6_final_mds'
 os.makedirs(output_dir, exist_ok=True)
 
+# Move existing markdown files to SS subdirectory before generating new ones
+ss_dir = os.path.join(output_dir, 'SS')
+os.makedirs(ss_dir, exist_ok=True)
+
+# Find and move all existing markdown files (excluding those already in SS)
+existing_files = [f for f in os.listdir(output_dir) 
+                  if f.endswith('.md') and os.path.isfile(os.path.join(output_dir, f))]
+
+if existing_files:
+    print(f"Moving {len(existing_files)} existing markdown files to SS/ subdirectory...")
+    for file in existing_files:
+        source = os.path.join(output_dir, file)
+        destination = os.path.join(ss_dir, file)
+        # Use shutil.move to handle overwrites
+        shutil.move(source, destination)
+        print(f"  Moved: {file}")
+    print("Legacy files moved successfully.\n")
+
 # =============================================================================
 # 1. Generate Sellside Highlights Markdown
 # =============================================================================
