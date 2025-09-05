@@ -572,8 +572,20 @@ def generate_english_pdf():
     output_dir = Path('data/7_pdfs')
     output_dir.mkdir(parents=True, exist_ok=True)
     
+    # NEW: Translate podcast summary first (separate from PDF)
+    input_dir = Path('data/6_final_mds')
+    podcast_md = input_dir / f'{friday_date}_podcast_summary.md'
+    podcast_eng_md = input_dir / f'{friday_date}_podcast_summary_english.md'
+    
+    if podcast_md.exists() and not podcast_eng_md.exists():
+        print("\n📝 Translating Podcast Summary (separate document)...")
+        translate_file_with_gemini(podcast_md, podcast_eng_md)
+        print(f"✅ Podcast summary translated: {podcast_eng_md.name}")
+    elif podcast_eng_md.exists():
+        print(f"✅ Podcast summary already translated: {podcast_eng_md.name}")
+    
     # Generate HTML content (includes translation if needed)
-    print("📝 Generating English content...")
+    print("\n📝 Generating English content for PDF...")
     html_content = create_combined_english_html()
     
     # Generate output filename
