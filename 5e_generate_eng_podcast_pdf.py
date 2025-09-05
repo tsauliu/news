@@ -234,9 +234,9 @@ def create_podcast_html(md_file):
     # Add episode title as a header if available
     if episode_title:
         html_content += f"""
-        <div style="text-align: center; margin-bottom: 2em; padding: 1em; border-bottom: 3px solid #2E7D32;">
-            <h1 style="margin: 0; font-size: 24pt; color: #2c3e50;">{episode_title}</h1>
-            <p style="margin-top: 0.5em; font-size: 12pt; color: #7f8c8d;">{podcast_name}</p>
+        <div style="text-align: center; margin-bottom: 1.5em; padding: 0.8em; border-bottom: 2px solid #2E7D32;">
+            <h1 style="margin: 0; font-size: 22pt; color: #2c3e50; font-weight: 600;">{episode_title}</h1>
+            <p style="margin-top: 0.3em; font-size: 11pt; color: #7f8c8d;">{podcast_name}</p>
         </div>
         """
     
