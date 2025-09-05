@@ -198,8 +198,92 @@ with open(detailed_md, 'w', encoding='utf-8') as f:
 
 print(f"Detailed news generated: {detailed_md}")
 
-print("All three markdown files generated successfully!")
-print("Files created:")
-print(f"1. {sellside_md}")
-print(f"2. {takeaway_md}")
-print(f"3. {detailed_md}") 
+# =============================================================================
+# 4. Generate Podcast Summary Markdown
+# =============================================================================
+import re
+from pathlib import Path
+
+podcast_dir = Path.home() / 'podcast' / friday_date
+podcast_md = f'{output_dir}/{friday_date}_podcast_summary.md'
+
+if podcast_dir.exists():
+    print(f"\nProcessing podcast summaries from {podcast_dir}")
+    
+    # Get all markdown files in the podcast directory
+    podcast_files = sorted(podcast_dir.glob('*.md'))
+    
+    if podcast_files:
+        with open(podcast_md, 'w', encoding='utf-8') as f:
+            f.write(f'# Podcast Summary for Week – {friday_date}\n\n')
+            
+            for podcast_file in podcast_files:
+                print(f"Processing podcast: {podcast_file.name}")
+                
+                try:
+                    content = podcast_file.read_text(encoding='utf-8')
+                    lines = content.strip().split('\n')
+                    
+                    # Extract title, summary and bullet points
+                    title = ""
+                    summary_text = ""
+                    bullets = []
+                    
+                    for i, line in enumerate(lines):
+                        # Extract title (first line starting with #)
+                        if line.startswith('# ') and not title:
+                            title = line[2:].strip()
+                            # Check if the summary is on the same line after a colon
+                            if '：' in title:
+                                parts = title.split('：', 1)
+                                title = parts[0].strip()
+                                summary_text = parts[1].strip()
+                            elif ':' in title:
+                                parts = title.split(':', 1)
+                                title = parts[0].strip()
+                                summary_text = parts[1].strip()
+                        # Extract summary if it's on the next line after title
+                        elif title and not summary_text and line.strip() and not line.startswith('-') and not line.startswith('#'):
+                            summary_text = line.strip()
+                        # Extract bullet points
+                        elif line.strip().startswith('- '):
+                            bullets.append(line.strip())
+                    
+                    # Write formatted content
+                    if title:
+                        f.write(f'## {title}\n\n')
+                    
+                    if summary_text:
+                        f.write(f'{summary_text}\n\n')
+                    
+                    if bullets:
+                        for bullet in bullets:
+                            f.write(f'{bullet}\n')
+                        f.write('\n')
+                    
+                except Exception as e:
+                    print(f"Error processing {podcast_file.name}: {str(e)}")
+                    continue
+        
+        print(f"Podcast summary generated: {podcast_md}")
+        
+        print("\nAll four markdown files generated successfully!")
+        print("Files created:")
+        print(f"1. {sellside_md}")
+        print(f"2. {takeaway_md}")  
+        print(f"3. {detailed_md}")
+        print(f"4. {podcast_md}")
+    else:
+        print(f"No podcast files found in {podcast_dir}")
+        print("\nAll three markdown files generated successfully!")
+        print("Files created:")
+        print(f"1. {sellside_md}")
+        print(f"2. {takeaway_md}")
+        print(f"3. {detailed_md}")
+else:
+    print(f"\nPodcast directory {podcast_dir} does not exist, skipping podcast summary")
+    print("\nAll three markdown files generated successfully!")
+    print("Files created:")
+    print(f"1. {sellside_md}")
+    print(f"2. {takeaway_md}")
+    print(f"3. {detailed_md}") 
