@@ -4,10 +4,44 @@ Generate English PDFs from translated podcast markdown files
 """
 
 import sys
+import re
 from pathlib import Path
 import markdown
 from weasyprint import HTML, CSS
 from parameters import friday_date
+
+def extract_episode_info(md_file):
+    """Extract podcast and episode titles from markdown"""
+    
+    with open(md_file, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    
+    podcast_name = ""
+    episode_title = ""
+    
+    for line in lines[:20]:  # Check first 20 lines for info
+        if line.startswith('- Podcast:'):
+            podcast_name = line.replace('- Podcast:', '').strip()
+        elif line.startswith('- Episode:'):
+            episode_title = line.replace('- Episode:', '').strip()
+            
+    return podcast_name, episode_title
+
+def sanitize_filename(title):
+    """Sanitize title for use as filename"""
+    # Remove invalid characters
+    invalid_chars = '<>:"/\\|?*'
+    for char in invalid_chars:
+        title = title.replace(char, '')
+    
+    # Replace periods and exclamation marks with nothing
+    title = title.replace('.', '').replace('!', '').replace('?', '')
+    
+    # Limit length
+    if len(title) > 150:
+        title = title[:150]
+    
+    return title.strip()
 
 def create_podcast_html(md_file):
     """Create HTML from podcast markdown file"""
@@ -16,17 +50,19 @@ def create_podcast_html(md_file):
     with open(md_file, 'r', encoding='utf-8') as f:
         markdown_text = f.read()
     
-    # Get podcast title from filename
-    podcast_title = md_file.stem
+    # Extract episode info
+    podcast_name, episode_title = extract_episode_info(md_file)
     
     # Create HTML with CSS styling
+    page_title = episode_title if episode_title else md_file.stem
+    
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{podcast_title}</title>
+        <title>{page_title}</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
             
@@ -170,7 +206,7 @@ def create_podcast_html(md_file):
                 }}
                 
                 @top-right {{
-                    content: "Podcast Transcript";
+                    content: "{podcast_name if podcast_name else 'Podcast Transcript'}";
                     font-size: 9pt;
                     color: #95a5a6;
                     font-family: 'Inter', sans-serif;
@@ -195,6 +231,15 @@ def create_podcast_html(md_file):
     <body>
     """
     
+    # Add episode title as a header if available
+    if episode_title:
+        html_content += f"""
+        <div style="text-align: center; margin-bottom: 2em; padding: 1em; border-bottom: 3px solid #2E7D32;">
+            <h1 style="margin: 0; font-size: 24pt; color: #2c3e50;">{episode_title}</h1>
+            <p style="margin-top: 0.5em; font-size: 12pt; color: #7f8c8d;">{podcast_name}</p>
+        </div>
+        """
+    
     # Convert markdown to HTML
     md_converter = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists', 'tables'])
     html_from_md = md_converter.convert(markdown_text)
@@ -211,7 +256,15 @@ def create_podcast_html(md_file):
 def generate_podcast_pdf(md_file):
     """Generate PDF from podcast markdown file"""
     
-    output_file = md_file.with_suffix('.pdf')
+    # Extract episode info to get proper filename
+    _, episode_title = extract_episode_info(md_file)
+    
+    # Use episode title as filename if available
+    if episode_title:
+        safe_filename = sanitize_filename(episode_title)
+        output_file = md_file.parent / f"{safe_filename}.pdf"
+    else:
+        output_file = md_file.with_suffix('.pdf')
     
     # Skip if PDF already exists
     if output_file.exists():
