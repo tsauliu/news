@@ -13,9 +13,11 @@ Features:
 
 import os
 import re
+from parameters import friday_date
 
-# Test with specific date
-test_date = '2025-08-29'
+# Use friday_date from parameters (or override for testing)
+# test_date = friday_date  # Use this for production
+test_date = '2025-09-05'  # Override for testing with specific date
 
 # Create output directory
 os.makedirs('data/7_emails', exist_ok=True)
@@ -68,13 +70,80 @@ def extract_podcast_essentials(podcast_path):
     
     return podcast_name, episode_title, summary, takeaways
 
-# Process podcasts
+# Parse consolidated podcast summary file
+def parse_consolidated_podcast_summary(file_path):
+    if not os.path.exists(file_path):
+        return []
+    
+    content = open(file_path, 'r', encoding='utf-8').read()
+    lines = content.split('\n')
+    
+    podcasts = []
+    current_podcast = None
+    current_summary = ""
+    current_bullets = []
+    in_summary_paragraph = False
+    
+    for line in lines:
+        # Check for podcast title (## [Podcast Name] Episode Title, Publish Time)
+        if line.startswith('## '):
+            # Save previous podcast if exists
+            if current_podcast:
+                podcasts.append((current_podcast['name'], current_podcast['title'], current_summary, current_bullets[:5]))
+            
+            # Parse new podcast header
+            header = line[3:].strip()  # Remove '## '
+            
+            # Extract podcast name if in brackets
+            podcast_name = ""
+            episode_with_date = header
+            if '[' in header and ']' in header:
+                start = header.index('[')
+                end = header.index(']')
+                podcast_name = header[start+1:end]
+                episode_with_date = header[end+1:].strip()
+            
+            current_podcast = {
+                'name': podcast_name,
+                'title': episode_with_date
+            }
+            current_summary = ""
+            current_bullets = []
+            in_summary_paragraph = True
+            
+        # Capture summary (first paragraph after title)
+        elif in_summary_paragraph and line.strip() and not line.startswith('-'):
+            current_summary = line.strip()
+            in_summary_paragraph = False
+            
+        # Capture bullet points
+        elif line.strip().startswith('- '):
+            current_bullets.append(line.strip()[2:])
+    
+    # Don't forget the last podcast
+    if current_podcast:
+        podcasts.append((current_podcast['name'], current_podcast['title'], current_summary, current_bullets[:5]))
+    
+    return podcasts
+
+# Process podcasts - first try consolidated file, then individual files
 podcast_summaries = []
-podcast_dir = f'podcast/{test_date}'
-for file in sorted(os.listdir(podcast_dir)):
-    if file.endswith('.md'):
-        podcast_name, episode_title, summary, takeaways = extract_podcast_essentials(f'{podcast_dir}/{file}')
-        podcast_summaries.append((podcast_name, episode_title, summary, takeaways[:5]))
+consolidated_podcast_file = f'data/6_final_mds/{test_date}_podcast_summary.md'
+
+if os.path.exists(consolidated_podcast_file):
+    print(f"Using consolidated podcast summary: {consolidated_podcast_file}")
+    podcast_summaries = parse_consolidated_podcast_summary(consolidated_podcast_file)
+else:
+    # Fallback to individual podcast files
+    podcast_dir = f'podcast/{test_date}'
+    if os.path.exists(podcast_dir):
+        print(f"Using individual podcast files from: {podcast_dir}")
+        for file in sorted(os.listdir(podcast_dir)):
+            if file.endswith('.md'):
+                podcast_name, episode_title, summary, takeaways = extract_podcast_essentials(f'{podcast_dir}/{file}')
+                podcast_summaries.append((podcast_name, episode_title, summary, takeaways[:5]))
+    else:
+        print(f"No podcast data found for {test_date}")
 
 # Parse markdown to extract sections and bullets
 def parse_key_takeaway_sections(text):
@@ -176,7 +245,7 @@ xmlns:w="urn:schemas-microsoft-com:office:word"
 xmlns="http://www.w3.org/TR/REC-html40">
 
 <head>
-<title>Autonomous Driving News Summary 2025 08 29</title>
+<title>Autonomous Driving News Summary """ + test_date.replace('-', ' ') + """</title>
 <meta http-equiv=Content-Type content="text/html; charset=utf-8">
 <meta name=Generator content="Microsoft Word 15">
 <meta name=Originator content="Microsoft Word 15">
@@ -205,7 +274,7 @@ mso-font-kerning:1.0pt;}
 
 <div class=WordSection1>
 
-<p class=MsoNormal align=center style='text-align:center'><b><span lang=EN-US style='font-size:14.0pt;font-family:"Calibri",sans-serif'>Autonomous Driving News Summary 2025 08 29<o:p></o:p></span></b></p>
+<p class=MsoNormal align=center style='text-align:center'><b><span lang=EN-US style='font-size:14.0pt;font-family:"Calibri",sans-serif'>Autonomous Driving News Summary """ + test_date.replace('-', ' ') + """<o:p></o:p></span></b></p>
 
 <p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
 
@@ -309,9 +378,18 @@ html_body += """
 # Add podcast summaries with improved format
 for podcast_name, episode_title, summary, takeaways in podcast_summaries:
     # Format as: [Podcast Name] Episode Title：Summary (all underlined)
-    html_body += f"""
+    # Note: episode_title may already include publish time
+    if podcast_name:
+        html_body += f"""
  <li class=MsoNormal style='text-align:justify;mso-list:l3 level1 lfo5'>
     <u><span style='font-family:等线'>[{podcast_name}] {episode_title}</span></u>
+    <span style='font-family:等线'>：{summary}</span>
+ </li>"""
+    else:
+        # No podcast name in brackets, just use the title
+        html_body += f"""
+ <li class=MsoNormal style='text-align:justify;mso-list:l3 level1 lfo5'>
+    <u><span style='font-family:等线'>{episode_title}</span></u>
     <span style='font-family:等线'>：{summary}</span>
  </li>"""
     
