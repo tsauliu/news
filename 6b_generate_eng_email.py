@@ -337,12 +337,12 @@ for report_title, bullets, link in sellside_reports:
     
     html_body += f"""
  <li class=MsoNormal style='text-align:justify;mso-list:l0 level1 lfo2'>
-    <span style='font-family:"Calibri",sans-serif'>{date_part}</span>"""
+    <u><span style='font-family:"Calibri",sans-serif'>{date_part}</span></u>"""
     
     if date_part and rest_part:
-        html_body += f"""<span style='font-family:"Calibri",sans-serif'>,{rest_part}</span>"""
+        html_body += f"""<u><span style='font-family:"Calibri",sans-serif'>,{rest_part}</span></u>"""
     elif rest_part:
-        html_body += f"""<span style='font-family:"Calibri",sans-serif'>{rest_part}</span>"""
+        html_body += f"""<u><span style='font-family:"Calibri",sans-serif'>{rest_part}</span></u>"""
     
     if link:
         html_body += f"""<span style='font-family:"Calibri",sans-serif'> (</span><a href="{link}"><span style='font-family:"Calibri",sans-serif'>{link}</span></a><span style='font-family:"Calibri",sans-serif'>)</span>"""
