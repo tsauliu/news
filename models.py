@@ -75,7 +75,7 @@ def gemini_model_stream(prompt, content, output_file, model="gemini-2.5-pro"):
             with open(output_file, 'w', encoding='utf-8') as f:
                 # Generate with streaming
                 response = client.models.generate_content_stream(
-                    model=model, contents=prompt+'\n -- \n'+content
+                    model=model, contents=prompt+'\n\n'+content
                 )
                 
                 # Write chunks as they arrive
