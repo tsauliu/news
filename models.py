@@ -1,100 +1,55 @@
 #%%
-import os
-import tiktoken
-
-def count_tokens(text):
-    encoding = tiktoken.get_encoding("cl100k_base")
-    return len(encoding.encode(text))
-
+import os, time
 from openai import OpenAI
-from apikey import api_key_deepseek,model_id_deepseek
 
-def deepseek_model(prompt,content):
-    client = OpenAI(
-    base_url="https://ark.cn-beijing.volces.com/api/v3/bots",
-    api_key=api_key_deepseek
-    )
-    def summary(content):
-        completion = client.chat.completions.create(
-            model=model_id_deepseek,
-            messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": content},
-        ],
-        )
-        return completion.choices[0].message.content
-    return summary(content)
+# OneAPI Configuration - hardcoded
+ONE_API_BASE_URL = 'http://localhost:3001/v1'
+ONE_API_KEY = 'sk-xrb5yN283dC9ytWNEaE207B3B2De4079B5D1C09cE988DdE9'
 
-from google import genai
-from apikey import gemini_key, gemini_key2, gemini_key3
+# Initialize OpenAI client
+_openai_client = OpenAI(
+    api_key=ONE_API_KEY,
+    base_url=ONE_API_BASE_URL
+)
 
-def gemini_model(prompt,content,model="gemini-2.5-pro"):
-    import time
+def OneAPI_request(prompt, context="",model="gemini-2.5-pro"):
+    """
+    Make a request to Gemini API with retry logic
     
-    # List of API keys to cycle through on retries
-    api_keys = [gemini_key, gemini_key2, gemini_key3]
-    key_names = ['gemini_key', 'gemini_key2', 'gemini_key3']
+    Args:
+        prompt: system context/role description
+        context: user input
+        model: model name to use (default: "gemini-2.5-pro")
+        
+    Returns:
+        str: The response content or empty string on failure
+    """
+    max_retries = 3
+    retry_delay = 2  # seconds
     
-    for attempt in range(3):
+    for attempt in range(max_retries):
         try:
-            # Use different API key for each attempt
-            current_key = api_keys[attempt]
-            key_name = key_names[attempt]
+            messages = []
+            if context:
+                messages.append({"role": "system", "content": prompt})
+            messages.append({"role": "user", "content": context})
             
-            client = genai.Client(api_key=current_key)
-            response = client.models.generate_content(
-                model=model, contents=prompt+'\n -- \n'+content
+            response = _openai_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0.5
             )
-            return response.text
-        except Exception as e:
-            if attempt < 2:  # Not the last attempt
-                print(f"Gemini API failed with {key_names[attempt]} (attempt {attempt + 1}/3): {e}")
-                print(f"Retrying with {key_names[attempt + 1]} in 5 seconds...")
-                time.sleep(5)
+            
+            if response and response.choices and response.choices[0].message.content:
+                return response.choices[0].message.content
             else:
-                print(f"Gemini API failed after 3 attempts with all keys: {e}")
-                raise
-
-def gemini_model_stream(prompt, content, output_file, model="gemini-2.5-pro"):
-    """Stream Gemini response directly to a markdown file"""
-    import time
-    
-    # List of API keys to cycle through on retries
-    api_keys = [gemini_key, gemini_key2, gemini_key3]
-    key_names = ['gemini_key', 'gemini_key2', 'gemini_key3']
-    
-    for attempt in range(3):
-        try:
-            # Use different API key for each attempt
-            current_key = api_keys[attempt]
-            key_name = key_names[attempt]
-            
-            client = genai.Client(api_key=current_key)
-            
-            # Open file for writing
-            with open(output_file, 'w', encoding='utf-8') as f:
-                # Generate with streaming
-                response = client.models.generate_content_stream(
-                    model=model, contents=prompt+'\n\n'+content
-                )
-                
-                # Write chunks as they arrive
-                full_text = ""
-                for chunk in response:
-                    if chunk.text:
-                        f.write(chunk.text)
-                        f.flush()  # Ensure immediate write
-                        full_text += chunk.text
-                        print('.', end='', flush=True)  # Progress indicator
-                
-                print()  # New line after progress dots
-                return full_text
+                print(f"Warning: Empty response on attempt {attempt + 1}")
                 
         except Exception as e:
-            if attempt < 2:  # Not the last attempt
-                print(f"\nGemini streaming failed with {key_names[attempt]} (attempt {attempt + 1}/3): {e}")
-                print(f"Retrying with {key_names[attempt + 1]} in 5 seconds...")
-                time.sleep(5)
+            print(f"Gemini request attempt {attempt + 1}/{max_retries} failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
             else:
-                print(f"\nGemini streaming failed after 3 attempts with all keys: {e}")
-                raise
+                print(f"All {max_retries} attempts failed")
+                
+    return ""
