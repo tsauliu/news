@@ -130,7 +130,7 @@ def summarize_sectors_parallel(output_files: List[str]) -> Dict[str, str]:
         for future in as_completed(future_map):
             sector_name, md_summary = future.result()
             if md_summary:
-                # Save individual sector summary
+                # Save individual sector summary as-is (prompt enforces format)
                 sector_summary_file = os.path.join(SUMMARY_DIR, f"{friday_date}_{sector_name}_summary.md")
                 try:
                     with open(sector_summary_file, "w", encoding="utf-8") as f:
