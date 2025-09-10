@@ -4,7 +4,7 @@ import os
 import glob
 from datetime import datetime
 import pandas as pd
-from models import deepseek_model,gemini_model
+from models import OneAPI_request
 from parameters import friday_date,errorkeywords,sector_list
 output_dir = f'data/4_combined_mds'
 os.makedirs(output_dir, exist_ok=True)
@@ -105,8 +105,8 @@ for output_file in output_files:
             
         print(f"Generating summary for sector: {sector_name}")
         
-        # Generate summary
-        md_summary = gemini_model(prompt,combined_md)
+        # Generate summary via OneAPI
+        md_summary = OneAPI_request(prompt, combined_md)
         
         # Save individual sector summary
         sector_summary_file = os.path.join(summary_dir, f'{friday_date}_{sector_name}_summary.md')

@@ -2,7 +2,7 @@
 #%%
 import os
 import pandas as pd
-from models import deepseek_model
+from models import OneAPI_request
 from parameters import friday_date,errorkeywords,get_filename
 
 prompt=open('./prompt/auto_url_to_md.md','r',encoding='utf-8').read()
@@ -34,7 +34,7 @@ def process_url(row):
         return
     
     try:
-        content = deepseek_model(prompt,content)
+        content = OneAPI_request(prompt, content,model="gemini-2.5-flash")
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(content)
             f.write(f'\ndate: {date}\n')
@@ -47,7 +47,7 @@ def process_url(row):
 import concurrent.futures
 import time
 # Use ThreadPoolExecutor to process URLs in parallel
-max_workers = 5  # Adjust based on your system capabilities and API rate limits
+max_workers = 10  # Adjust based on your system capabilities and API rate limits
 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
     # Submit all tasks and collect futures
     futures = {executor.submit(process_url, row): row for _, row in urls.iterrows()}
@@ -59,4 +59,3 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             print(result)
         # Add a small delay to avoid overwhelming the API
         time.sleep(0.1)
-
