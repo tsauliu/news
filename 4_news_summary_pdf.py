@@ -18,8 +18,6 @@ Notes:
 from __future__ import annotations
 
 import os
-import re
-import shutil
 from pathlib import Path
 from typing import List
 
@@ -133,7 +131,8 @@ def build_detailed_news_md(combined_md_text: str) -> str:
             out.append("")
             link = it.get("link")
             if link:
-                out.append(f"[原文链接]({link})")
+                # Use English label to keep CN/ENG consistent
+                out.append(f"[Original Link]({link})")
                 out.append("")
             meta_parts = []
             if it.get("date"):
@@ -262,6 +261,9 @@ def translate_detailed_news_by_news(input_path: Path, output_path: Path, max_wor
 
     output_path.write_text("\n".join(out_lines).rstrip() + "\n", encoding="utf-8")
     return True
+
+
+# Link label normalization no longer required; CN uses "[Original Link]" already
 
 
 def write_text(path: Path, content: str) -> None:
