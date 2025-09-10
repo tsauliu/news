@@ -4,6 +4,7 @@ import datetime
 import os
 import requests
 import shutil
+from urllib.parse import urlparse, parse_qs
 
 current_date = datetime.datetime.now()
 days_until_friday = (6 - (current_date.weekday() + 2) % 7) % 7  # 6 represents Friday in this system
@@ -31,10 +32,37 @@ def download_file(url, local_path):        # Download the database file
     except Exception as e:
         print(f"Error downloading file: {e}")
         return False
-def get_filename(url,source):
+def get_filename(url, source):
+    """Return a safe identifier for storing content fetched from a URL.
+
+    - wechat: keep existing behavior (used by remote fetch paths); do not change.
+    - rss: prefer the 'sn' query param when present; fallback to '/s/<id>' segment;
+      finally fallback to an md5 of the URL to avoid illegal filename chars.
+    - default: last path segment.
+    """
+    if not isinstance(url, str) or not url:
+        return "unknown"
+
     if source == 'wechat':
+        # Preserve legacy behavior to remain compatible with remote article store
         return url.split('/')[-1]
     elif source == 'rss':
-        return url.split('sn=')[-1].replace('=','').replace('&','')
+        try:
+            parsed = urlparse(url)
+            q = parse_qs(parsed.query)
+            sn = q.get('sn', [None])[0]
+            if sn:
+                return sn
+            # Fallback: /s/<id> style links
+            path_last = (parsed.path or '').strip('/').split('/')[-1]
+            if path_last and path_last != 's':
+                return path_last
+            # Last-resort: stable hash of the URL
+            import hashlib
+
+            return hashlib.md5(url.encode('utf-8')).hexdigest()
+        except Exception:
+            # As a very last resort, strip problematic characters
+            return url.replace('/', '_').replace('?', '_').replace('&', '_').replace('=', '_')
     else:
         return url.split('/')[-1]

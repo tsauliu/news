@@ -13,8 +13,33 @@ local_folder_path = f'./data/2_raw_mds/{friday_date}'
 os.makedirs(local_folder_path, exist_ok=True)
 
 if ARTICLE_SOURCE == 'rss':
-    # RSS mode: 0_RSS.py has already written raw MDs locally
-    print("RSS mode: skipping remote markdown download; MDs are generated in 0_RSS.py.")
+    # RSS mode: 0_RSS.py should have written raw MDs locally.
+    # Backfill minimal placeholders for any missing MDs so step 3 doesn't fail.
+    print("RSS mode: verifying raw MDs; backfilling placeholders if missing.")
+    missing = 0
+    for _, row in urls.iterrows():
+        url = row.get('url')
+        source = row.get('source', 'rss')
+        rawfilename = f"{get_filename(url, source)}.md"
+        output_path = os.path.join(local_folder_path, rawfilename)
+        if not os.path.exists(output_path):
+            missing += 1
+            try:
+                safe_title = row.get('title') or 'Untitled'
+                published = row.get('publish_time') or row.get('published') or ''
+                mp_name = row.get('mp_name') or row.get('source_name') or ''
+                placeholder = (
+                    "[No content extracted]\n"
+                    f"Source: {mp_name}\nTitle: {safe_title}\nLink: {url}\nPublished: {published}\n"
+                )
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(placeholder)
+            except Exception as e:
+                print(f"  Warning: failed to write placeholder for {url}: {e}")
+    if missing:
+        print(f"Backfilled {missing} placeholder MD(s) under {local_folder_path}")
+    else:
+        print("All expected MDs present.")
 else:
     print(f"Processing {len(urls)} URLs (remote_db mode)")
     # Process each URL

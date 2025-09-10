@@ -3,11 +3,17 @@ import feedparser
 import os
 import pandas as pd
 import xml.etree.ElementTree as ET  # Import ElementTree for XML parsing
-from parameters import friday_date, get_filename
+from parameters import friday_date, get_filename, errorkeywords
 from bs4 import BeautifulSoup
 
 # Set up output folder (created only when running in RSS mode)
 local_folder_path = f'./data/2_raw_mds/{friday_date}'
+
+def _html_to_text(html: str) -> str:
+    if not html:
+        return ""
+    soup = BeautifulSoup(html, 'html.parser')
+    return soup.get_text("\n")
 
 def read_opml_feeds_to_df(opml_file='rss_source.opml'):
     """Reads RSS feed URLs and names from an OPML file, parses feeds, and returns articles as a Pandas DataFrame."""
@@ -56,22 +62,51 @@ def read_opml_feeds_to_df(opml_file='rss_source.opml'):
             print(f"    Warning: Potential issue parsing feed {url}. Reason: {feed.bozo_exception}")
 
         for entry in feed.entries:
+            link = entry.get('link')
+            title = entry.get('title')
+            published = entry.get('published')
+
             articles_list.append({
-                'source_name': source_name, # Add the source name
-                'published': entry.get('published'),
-                'title': entry.get('title'),
-                'link': entry.get('link')
+                'source_name': source_name,  # Add the source name
+                'published': published,
+                'title': title,
+                'link': link,
             })
+
+            # Build filename early to allow gap-filling in later steps
+            filename = f"{get_filename(link, 'rss')}.md"
+            output_path = os.path.join(local_folder_path, filename)
+
+            # Skip if already exists (avoid duplicate rewrites)
+            if os.path.exists(output_path):
+                continue
+
+            # 1) Prefer embedded content from the feed
+            text_content = ""
             try:
-                content=entry.get('content')[0]['value']
-                soup = BeautifulSoup(content, 'html.parser')
-                text_content = soup.get_text()
-                filename = f"{get_filename(entry.get('link'),'rss')}.md"
-                output_path = os.path.join(local_folder_path, filename)
+                content_items = entry.get('content')
+                if content_items and isinstance(content_items, list) and content_items:
+                    content_html = content_items[0].get('value')
+                    text_content = _html_to_text(content_html)
+            except Exception:
+                text_content = ""
+
+            # 2) Fallback to summary/description HTML
+            if not text_content or any(k in text_content for k in errorkeywords):
+                summary_html = entry.get('summary') or entry.get('description')
+                if summary_html:
+                    text_content = _html_to_text(summary_html)
+
+            # Ensure we always write something for traceability
+            if not text_content:
+                safe_title = title or 'Untitled'
+                text_content = f"[No content extracted]\nSource: {source_name}\nTitle: {safe_title}\nLink: {link}\nPublished: {published}"
+
+            try:
                 with open(output_path, 'w', encoding='utf-8') as f:
                     f.write(text_content)
             except Exception as e:
-                print(f"Error processing feed {url}: {e}")
+                print(f"    Error writing file for {link}: {e}")
 
         # except Exception as e:
         #     print(f"    Error processing feed {url}: {e}")
