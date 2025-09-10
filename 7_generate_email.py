@@ -211,7 +211,7 @@ mso-font-kerning:1.0pt;}
 
 <p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span style='font-family:等线'>请查收我们本周的</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>Autonomous Driving News Update</span><span style='font-family:等线'>，</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>key topics</span><span style='font-family:等线'>总结如下，详细信息请查阅附件中完整的</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>news brief</span><span style='font-family:等线'>。有任何问题请随时联系我们，谢谢！</span><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
+<p class=MsoNormal><span style='font-family:DengXian, 等线'>请查收我们本周的</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>Autonomous Driving News Update</span><span style='font-family:DengXian, 等线'>，</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>key topics</span><span style='font-family:DengXian, 等线'>总结如下，详细信息请查阅附件中完整的</span><span lang=EN-US style='font-family:"Calibri",sans-serif'>news brief</span><span style='font-family:DengXian, 等线'>。有任何问题请随时联系我们，谢谢！</span><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
 
@@ -227,14 +227,14 @@ mso-font-kerning:1.0pt;}
             html += """</ul>
 """
         html += f"""
-<p class=MsoNormal><u><span style='font-family:等线'>{section_name}</span></u><span style='font-family:等线'>：</span></p>
+<p class=MsoNormal><u><span style='font-family:DengXian, 等线'>{section_name}</span></u><span style='font-family:DengXian, 等线'>：</span></p>
 
 <ul style='margin-top:0cm' type=disc>"""
         for bullet in bullets:
             chinese_chars = len(re.findall(r'[\u4e00-\u9fff]', bullet))
             total_chars = max(len(bullet), 1)
             is_chinese = chinese_chars > total_chars * 0.3
-            font = '等线' if is_chinese else '"Calibri",sans-serif'
+            font = 'DengXian, 等线' if is_chinese else '"Calibri",sans-serif'
             html += f"""
  <li class=MsoNormal style='text-align:justify;mso-list:l1 level1 lfo1'><span style='font-family:{font}'>{bullet}</span></li>"""
         first_section = False
@@ -276,7 +276,7 @@ mso-font-kerning:1.0pt;}
     <ul style='margin-top:0cm' type=circle>"""
                     for sub_bullet in bullets:
                         html += f"""
-      <li class=MsoNormal style='text-align:justify;mso-list:l0 level2 lfo2'><span style='font-family:等线'>{sub_bullet}</span></li>"""
+      <li class=MsoNormal style='text-align:justify;mso-list:l0 level2 lfo2'><span style='font-family:DengXian, 等线'>{sub_bullet}</span></li>"""
                     html += """
     </ul>"""
                 html += """
@@ -297,14 +297,14 @@ mso-font-kerning:1.0pt;}
             if podcast_name:
                 html += f"""
  <li class=MsoNormal style='text-align:justify;mso-list:l3 level1 lfo5'>
-    <u><span style='font-family:等线'>[{podcast_name}] {episode_title}</span></u>
-    <span style='font-family:等线'>：{summary}</span>
+    <u><span style='font-family:DengXian, 等线'>[{podcast_name}] {episode_title}</span></u>
+    <span style='font-family:DengXian, 等线'>：{summary}</span>
  </li>"""
             else:
                 html += f"""
  <li class=MsoNormal style='text-align:justify;mso-list:l3 level1 lfo5'>
-    <u><span style='font-family:等线'>{episode_title}</span></u>
-    <span style='font-family:等线'>：{summary}</span>
+    <u><span style='font-family:DengXian, 等线'>{episode_title}</span></u>
+    <span style='font-family:DengXian, 等线'>：{summary}</span>
  </li>"""
             if takeaways:
                 html += """
@@ -312,41 +312,12 @@ mso-font-kerning:1.0pt;}
                 for tk in takeaways:
                     html += f"""
   <li class=MsoNormal style='text-align:justify;mso-list:l3 level2 lfo5'>
-     <span style='font-family:等线'>{tk}</span>
+     <span style='font-family:DengXian, 等线'>{tk}</span>
   </li>"""
                 html += """
  </ul>"""
 
-        html += """
-</ul>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
-"""
-
-    # Signature block (same as Archive)
     html += """
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Leo Cao<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Deputy Manager<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>BDA<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>&nbsp;<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>BDA (China) Limited<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>36th Floor, China World Tower 3A,<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>1 Jian Guo Men Wai Avenue,<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Chaoyang District, Beijing 100004, China<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Tel: +8610 6564 2288 x 286<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Direct: +8610 6564 2286<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US><o:p>&nbsp;</o:p></span></p>
-
 </div>
 
 </body>
@@ -504,31 +475,6 @@ mso-font-kerning:1.0pt;}
 </ul>
 
 <p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'><o:p>&nbsp;</o:p></span></p>
-"""
-
-    # Signature block
-    html += """
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Leo Cao<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Deputy Manager<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>BDA<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>&nbsp;<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>BDA (China) Limited<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>36th Floor, China World Tower 3A,<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>1 Jian Guo Men Wai Avenue,<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Chaoyang District, Beijing 100004, China<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Tel: +8610 6564 2288 x 286<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US style='font-family:"Calibri",sans-serif'>Direct: +8610 6564 2286<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-US><o:p>&nbsp;</o:p></span></p>
 
 </div>
 
