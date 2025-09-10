@@ -2,13 +2,12 @@
 import feedparser
 import os
 import pandas as pd
-import xml.etree.ElementTree as ET # Import ElementTree for XML parsing
-from parameters import friday_date,get_filename
+import xml.etree.ElementTree as ET  # Import ElementTree for XML parsing
+from parameters import friday_date, get_filename
 from bs4 import BeautifulSoup
 
-# Set up output folder
+# Set up output folder (created only when running in RSS mode)
 local_folder_path = f'./data/2_raw_mds/{friday_date}'
-os.makedirs(local_folder_path, exist_ok=True)
 
 def read_opml_feeds_to_df(opml_file='rss_source.opml'):
     """Reads RSS feed URLs and names from an OPML file, parses feeds, and returns articles as a Pandas DataFrame."""
@@ -43,6 +42,9 @@ def read_opml_feeds_to_df(opml_file='rss_source.opml'):
 
     print(f"Processing {len(sources)} RSS sources from '{opml_file}'...")
 
+    # Ensure output dir exists when actually processing
+    os.makedirs(local_folder_path, exist_ok=True)
+
     # Iterate through each source (name and url)
     for source_info in sources:
         url = source_info['url']
@@ -64,7 +66,7 @@ def read_opml_feeds_to_df(opml_file='rss_source.opml'):
                 content=entry.get('content')[0]['value']
                 soup = BeautifulSoup(content, 'html.parser')
                 text_content = soup.get_text()
-                filename = f'{get_filename(entry.get('link'),'rss')}.md'
+                filename = f"{get_filename(entry.get('link'),'rss')}.md"
                 output_path = os.path.join(local_folder_path, filename)
                 with open(output_path, 'w', encoding='utf-8') as f:
                     f.write(text_content)
@@ -99,7 +101,7 @@ if __name__ == "__main__":
         print(articles_df.info())
         print("\n--- First 5 Articles ---")
         print(articles_df.head())
-                
+        
         # Check if the output file already exists
         output_file = './data/rss_articles.csv'
         if os.path.exists(output_file):

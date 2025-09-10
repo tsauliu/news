@@ -1,6 +1,7 @@
 # Calculate the date of the Friday of the current week
 #%%
 import datetime
+import os
 import requests
 import shutil
 
@@ -9,6 +10,10 @@ days_until_friday = (6 - (current_date.weekday() + 2) % 7) % 7  # 6 represents F
 friday_date = (current_date + datetime.timedelta(days=days_until_friday)).strftime('%Y-%m-%d')
 errorkeywords=["微信，是一个生活方式","参数错误","LinkReader","微信输入法"]
 sector_list=['商业落地','核心技术','政策监管','企业战略','硬件设备','数据与地图','资本动向']#%%
+
+# Article source selection: 'remote_db' or 'rss'
+# Can be overridden via env var ARTICLE_SOURCE
+ARTICLE_SOURCE = os.getenv('ARTICLE_SOURCE', 'rss').lower()
 
 
 def download_file(url, local_path):        # Download the database file
