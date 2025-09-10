@@ -52,7 +52,7 @@ def process_url(row):
 import concurrent.futures
 import time
 # Use ThreadPoolExecutor to process URLs in parallel
-max_workers = 10  # Adjust based on your system capabilities and API rate limits
+max_workers = 50  # Adjust based on your system capabilities and API rate limits
 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
     # Submit all tasks and collect futures
     futures = {executor.submit(process_url, row): row for _, row in urls.iterrows()}
