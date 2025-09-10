@@ -21,6 +21,7 @@ import os
 import datetime as dt
 import sqlite3
 from typing import List, Dict
+from pathlib import Path
 
 import pandas as pd
 
@@ -58,6 +59,23 @@ def _html_to_text(html: str) -> str:
 def _ensure_dirs() -> None:
     os.makedirs(URLS_DIR, exist_ok=True)
     os.makedirs(RAW_MDS_DIR, exist_ok=True)
+
+
+def _ensure_weekly_external_folders() -> None:
+    """Ensure this week's Podcast and Sellside source folders exist under Dropbox.
+
+    Creates:
+    - ~/Dropbox/MyServerFiles/AutoWeekly/Podcast/{friday_date}
+    - ~/Dropbox/MyServerFiles/AutoWeekly/Sellside/{friday_date}
+    """
+    base = Path.home() / "Dropbox" / "MyServerFiles" / "AutoWeekly"
+    podcast_dir = base / "Podcast" / friday_date
+    sellside_dir = base / "Sellside" / friday_date
+    try:
+        podcast_dir.mkdir(parents=True, exist_ok=True)
+        sellside_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        print(f"Warning: failed to ensure external weekly folders: {e}")
 
 
 # ---------------------------
@@ -352,6 +370,7 @@ def main() -> None:
     archive_existing_in_target(RAW_MDS_ROOT_DIR, exclude_names=[friday_date])
 
     _ensure_dirs()
+    _ensure_weekly_external_folders()
 
     if ARTICLE_SOURCE == "rss":
         # Step 0: RSS ingest + write raw mds
