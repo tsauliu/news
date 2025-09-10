@@ -6,9 +6,7 @@ Outputs:
 - Markdown (CN): `data/6_final_mds/{friday_date}_detailed_news.md`
 - Markdown (ENG): `data/6_final_mds/{friday_date}_key_takeaway_english.md`
 - Markdown (ENG): `data/6_final_mds/{friday_date}_detailed_news_english.md`
-- PDF (CN): `data/7_pdfs/Autonomous Driving AI News Summary {YYYY MM DD}.pdf`
-- PDF (ENG): `data/7_pdfs/Autonomous Driving AI News Summary {YYYY MM DD}_ENG.pdf`
-- PDFs are also copied to `~/Dropbox/MyServerFiles/AutoWeekly/Deliverable/{YYYY-MM-DD}/{CN|ENG}`
+- PDFs saved directly to `~/Dropbox/MyServerFiles/AutoWeekly/Deliverable/{YYYY-MM-DD}/{CN|ENG}`
 
 Notes:
 - No sellside highlights, no podcast handling (per plan).
@@ -36,12 +34,10 @@ COMBINED_NEWS_MD = f"data/4_combined_mds/{friday_date}_combined_news.md"
 
 # Output locations for this step
 FINAL_MDS_DIR = Path("data/6_final_mds")
-PDFS_DIR = Path("data/7_pdfs")
 
 
 def ensure_dirs() -> None:
     FINAL_MDS_DIR.mkdir(parents=True, exist_ok=True)
-    PDFS_DIR.mkdir(parents=True, exist_ok=True)
     # Archive old outputs (keep current date)
     archive_existing_in_target(str(FINAL_MDS_DIR), exclude_contains=[friday_date])
 
@@ -180,77 +176,87 @@ def translate_line_with_gemini(text: str) -> str:
     return translated.strip() if translated else text
 
 
-def translate_detailed_news_line_by_line(input_path: Path, output_path: Path, max_workers: int = 50) -> bool:
-    """Translate detailed news markdown line-by-line with concurrency (50 workers).
+def translate_detailed_news_by_news(input_path: Path, output_path: Path, max_workers: int = 50) -> bool:
+    """Translate detailed news markdown chunk-by-chunk (one news item per request).
 
-    Mirrors original behavior: preserve headers, links, and simple metadata formatting.
+    - Uses `gemini-2.5-flash` with the original Gemini formatting prompt.
+    - Retains original markdown structure while reducing API calls.
     """
     if not input_path.exists():
         print(f"Warning: File {input_path} not found, skipping...")
         return False
 
-    lines = input_path.read_text(encoding="utf-8").splitlines()
+    text = input_path.read_text(encoding="utf-8")
+    lines = text.splitlines()
 
+    pieces: List[dict] = []  # [{type: 'raw'|'sector'|'news', 'text': str}]
+    current_news: List[str] | None = None
+
+    def flush_news():
+        nonlocal current_news
+        if current_news is not None:
+            chunk = "\n".join(current_news).strip()
+            if chunk:
+                pieces.append({"type": "news", "text": chunk})
+            current_news = None
+
+    for ln in lines:
+        if ln.startswith("## "):
+            flush_news()
+            pieces.append({"type": "sector", "text": ln})
+        elif ln.startswith("### "):
+            flush_news()
+            current_news = [ln]
+        else:
+            if current_news is not None:
+                current_news.append(ln)
+            else:
+                # raw lines (top header, blank lines, etc.)
+                pieces.append({"type": "raw", "text": ln})
+    flush_news()
+
+    # Prepare concurrent translation for news chunks
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    def translate_line(line: str) -> str:
-        s = line.rstrip("\n")
-        if not s.strip():
-            return s
+    prompt = _load_prompt(PROMPT_GEMINI_FULL)
 
-        # Headers: keep # count, translate text
-        if s.startswith('#'):
-            header_level = len(s) - len(s.lstrip('#'))
-            header_text = s[header_level:].strip()
+    def translate_news_chunk(md_chunk: str) -> str:
+        out = OneAPI_request(prompt, md_chunk, model="gemini-2.5-flash")
+        return out.strip() if out else md_chunk
+
+    translated_news: List[str] = []
+    # Map piece index to future for reconstruction
+    news_indices = [i for i, p in enumerate(pieces) if p["type"] == "news"]
+    results_map = {}
+    if news_indices:
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futures = {ex.submit(translate_news_chunk, pieces[i]["text"]): i for i in news_indices}
+            for fut in as_completed(futures):
+                idx = futures[fut]
+                try:
+                    results_map[idx] = fut.result()
+                except Exception as e:
+                    print(f"Chunk translation failed at piece {idx}: {e}")
+                    results_map[idx] = pieces[idx]["text"]
+
+    # Reconstruct document
+    out_lines: List[str] = []
+    for i, piece in enumerate(pieces):
+        typ = piece["type"]
+        if typ == "raw":
+            out_lines.append(piece["text"])
+        elif typ == "sector":
+            # Translate header text only
+            header_text = piece["text"][2:].strip('# ').strip()
             translated = translate_line_with_gemini(header_text)
-            return ('#' * header_level) + (' ' + translated if translated else (' ' + header_text if header_text else ''))
+            out_lines.append(f"## {translated if translated else header_text}")
+            out_lines.append("")
+        elif typ == "news":
+            translated_chunk = results_map.get(i, piece["text"])  # default to original on failure
+            out_lines.append(translated_chunk)
+            out_lines.append("")
 
-        # Link lines like [原文链接](url)
-        if s.startswith('[') and '](' in s:
-            import re as _re
-            m = _re.match(r"\[(.*?)\]\((.*?)\)", s)
-            if m:
-                link_text, url = m.group(1), m.group(2)
-                if link_text == '原文链接':
-                    return f"[Original Article]({url})"
-                # If link text has Chinese, translate just the text
-                if any('\u4e00' <= c <= '\u9fff' for c in link_text):
-                    lt = translate_line_with_gemini(link_text)
-                    return f"[{lt if lt else link_text}]({url})"
-            return s
-
-        # Emphasized metadata lines like *YYYY-MM-DD - Author*
-        if s.startswith('*') and s.endswith('*'):
-            inner = s[1:-1].strip()
-            if any('\u4e00' <= c <= '\u9fff' for c in inner):
-                parts = inner.split(' - ')
-                if len(parts) == 2:
-                    date_part, author_part = parts
-                    author_trans = translate_line_with_gemini(author_part)
-                    return f"*{date_part} - {author_trans if author_trans else author_part}*"
-                else:
-                    trans = translate_line_with_gemini(inner)
-                    return f"*{trans if trans else inner}*"
-            return s
-
-        # Otherwise translate whole line
-        t = translate_line_with_gemini(s)
-        return t if t else s
-
-    idxs = [i for i, _ in enumerate(lines)]
-    results = {}
-    with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        future_map = {ex.submit(translate_line, lines[i]): i for i in idxs}
-        for fut in as_completed(future_map):
-            i = future_map[fut]
-            try:
-                results[i] = fut.result()
-            except Exception as e:
-                print(f"Line {i} translation failed: {e}")
-                results[i] = lines[i]
-
-    out_lines = [results.get(i, lines[i]) for i in range(len(lines))]
-    output_path.write_text("\n".join(out_lines) + "\n", encoding="utf-8")
+    output_path.write_text("\n".join(out_lines).rstrip() + "\n", encoding="utf-8")
     return True
 
 
@@ -429,22 +435,14 @@ def render_pdf(html_content: str, lang: str) -> Path | None:
         + ("_ENG" if lang == "ENG" else "")
         + ".pdf"
     )
-    out_path = PDFS_DIR / out_name
+    deliver_dir = Path.home() / "Dropbox" / "MyServerFiles" / "AutoWeekly" / "Deliverable" / friday_date / ("CN" if lang == "CN" else "ENG")
+    deliver_dir.mkdir(parents=True, exist_ok=True)
+    out_path = deliver_dir / out_name
     HTML(string=html_content).write_pdf(out_path, stylesheets=[CSS(string='@page { size: A4; margin: 2cm 1cm; }')])
     return out_path
 
 
-def copy_to_deliverable(pdf_path: Path, lang: str) -> None:
-    target_root = Path.home() / "Dropbox" / "MyServerFiles" / "AutoWeekly" / "Deliverable" / friday_date / (
-        "CN" if lang == "CN" else "ENG"
-    )
-    target_root.mkdir(parents=True, exist_ok=True)
-    dest = target_root / pdf_path.name
-    try:
-        shutil.copy2(pdf_path, dest)
-        print(f"Copied PDF to: {dest}")
-    except Exception as e:
-        print(f"Warning: failed to copy PDF to deliverable folder: {e}")
+# No copy step needed; PDFs are written directly to deliverable folders.
 
 
 def main() -> None:
@@ -474,8 +472,8 @@ def main() -> None:
     eng_takeaway_path = FINAL_MDS_DIR / f"{friday_date}_key_takeaway_english.md"
     eng_detailed_path = FINAL_MDS_DIR / f"{friday_date}_detailed_news_english.md"
     write_text(eng_takeaway_path, eng_takeaway)
-    # line-by-line translation writes directly to file
-    translate_detailed_news_line_by_line(cn_detailed_path, eng_detailed_path, max_workers=50)
+    # news-by-news translation writes directly to file
+    translate_detailed_news_by_news(cn_detailed_path, eng_detailed_path, max_workers=50)
     print(f"Saved ENG markdowns to {FINAL_MDS_DIR}")
 
     # Render PDFs with original formatting
@@ -483,13 +481,11 @@ def main() -> None:
     cn_pdf = render_pdf(cn_html, lang="CN")
     if cn_pdf:
         print(f"CN PDF: {cn_pdf}")
-        copy_to_deliverable(cn_pdf, lang="CN")
 
     eng_html = create_eng_html()
     eng_pdf = render_pdf(eng_html, lang="ENG")
     if eng_pdf:
         print(f"ENG PDF: {eng_pdf}")
-        copy_to_deliverable(eng_pdf, lang="ENG")
 
 
 if __name__ == "__main__":
