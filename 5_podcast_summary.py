@@ -7,9 +7,10 @@ What it does
 - Builds consolidated podcast summary markdown exactly like legacy format (keeps ALL key takeaways):
   - CN:  data/6_final_mds/{friday_date}_podcast_summary.md
   - ENG: data/6_final_mds/{friday_date}_podcast_summary_english.md
-- Generates per-episode PDFs with podcast styling to Deliverables:
-  - CN PDFs -> ~/Dropbox/MyServerFiles/AutoWeekly/Deliverable/{YYYY-MM-DD}/CN
+- Generates ENG per-episode PDFs with podcast styling to Deliverables:
   - ENG PDFs -> ~/Dropbox/MyServerFiles/AutoWeekly/Deliverable/{YYYY-MM-DD}/ENG
+  - Naming: one podcast per file as `podcast_<Episode Title>.pdf` (English-only content)
+- CN podcasts: no rendering; copies original CN PDFs from source to CN deliverables.
 
 Notes
 - Reuses styling/logic from legacy podcast scripts in Archive (HTML/CSS + translation approach).
@@ -120,6 +121,107 @@ def translate_markdown_full(md_text: str) -> str:
     cleaned = _clean_timestamp_links(md_text)
     out = OneAPI_request(prompt, cleaned, model="gemini-2.5-pro")
     return out.strip() if out else ""
+
+
+def translate_full_podcast_by_chunks(md_text: str, chunk_lines: int = 300, max_workers: int = 10) -> str:
+    """Translate a full podcast markdown by chunks using gemini-2.5-flash.
+
+    - Preserves markdown formatting by using the format-preserving prompt.
+    - Splits by lines to maintain section boundaries reasonably.
+    - Processes chunks concurrently with up to `max_workers`.
+    """
+    if not md_text.strip():
+        return ""
+    prompt = _load_prompt(PROMPT_GEMINI_FULL)
+
+    # Clean to reduce token usage while keeping structure
+    cleaned = _clean_timestamp_links(md_text)
+    lines = cleaned.splitlines(keepends=True)
+    if not lines:
+        return ""
+
+    # Build chunks of fixed number of lines
+    chunks: List[str] = []
+    for i in range(0, len(lines), chunk_lines):
+        chunk_text = "".join(lines[i : i + chunk_lines])
+        chunks.append(chunk_text)
+
+    # Translate each chunk with concurrency
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    results: List[str] = ["" for _ in chunks]
+
+    def translate_chunk(idx: int, text: str) -> Tuple[int, str]:
+        try:
+            out = OneAPI_request(prompt, text, model="gemini-2.5-flash")
+            return idx, (out.strip() if out else text)
+        except Exception:
+            return idx, text
+
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        futures = [ex.submit(translate_chunk, idx, ch) for idx, ch in enumerate(chunks)]
+        for fut in as_completed(futures):
+            idx, translated = fut.result()
+            results[idx] = translated
+
+    return "".join(results)
+
+
+def _has_chinese(text: str) -> bool:
+    return bool(re.search(r"[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]", text))
+
+
+def _translate_line_flash(text: str) -> str:
+    prompt = _load_prompt(PROMPT_GEMINI_FULL)
+    out = OneAPI_request(prompt, text, model="gemini-2.5-flash")
+    return out.strip() if out else text
+
+
+def ensure_english_only(text: str) -> str:
+    """Ensure final text contains no Chinese by re-translating any leftover lines.
+
+    Uses gemini-2.5-flash on lines that still contain Chinese after chunk translation.
+    As a last resort, strips residual CJK characters to satisfy the 'no Chinese' requirement.
+    """
+    if not text:
+        return text
+    lines = text.splitlines(keepends=True)
+    fixed: List[str] = []
+    for ln in lines:
+        if _has_chinese(ln) and ln.strip():
+            try:
+                tr = _translate_line_flash(ln)
+                fixed.append(tr if tr else ln)
+            except Exception:
+                fixed.append(ln)
+        else:
+            fixed.append(ln)
+    out = "".join(fixed)
+    # Normalize common Chinese punctuation to English equivalents
+    punct_map = {
+        "，": ", ",
+        "。": ". ",
+        "！": "!",
+        "？": "?",
+        "：": ": ",
+        "；": "; ",
+        "（": "(",
+        "）": ")",
+        "【": "[",
+        "】": "]",
+        "「": '"',
+        "」": '"',
+        "『": '"',
+        "』": '"',
+        "《": '"',
+        "》": '"',
+    }
+    for k, v in punct_map.items():
+        out = out.replace(k, v)
+    # Final guard: strip any lingering CJK characters
+    if _has_chinese(out):
+        out = re.sub(r"[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]", "", out)
+    return out
 
 
 def create_podcast_html(md_file: Path, language: str = "en") -> str:
@@ -365,16 +467,17 @@ def build_consolidated_podcast_summary(md_files: List[Path]) -> str:
     """
     out: List[str] = [f"# Podcast Summary – {friday_date}", ""]
 
-    def parse_episode(md_path: Path) -> Tuple[str, str, str, List[str]]:
+    def parse_episode(md_path: Path) -> Tuple[str, str, str, List[str], str]:
         podcast_name = ""
         episode_title = ""
+        publish_time = ""
         summary_lines: List[str] = []
         takeaways: List[str] = []
 
         try:
             lines = md_path.read_text(encoding="utf-8").splitlines()
         except Exception:
-            return podcast_name, episode_title, "", takeaways
+            return podcast_name, episode_title, "", takeaways, publish_time
 
         in_info = in_summary = in_takeaways = False
         for ln in lines:
@@ -400,6 +503,8 @@ def build_consolidated_podcast_summary(md_files: List[Path]) -> str:
                         podcast_name = info.split(":", 1)[1].strip()
                     elif info.startswith("节目:") or info.startswith("集:") or info.startswith("Episode:"):
                         episode_title = info.split(":", 1)[1].strip()
+                    elif info.startswith("发布时间:") or info.startswith("Publish Time:"):
+                        publish_time = info.split(":", 1)[1].strip()
             elif in_summary:
                 if stripped:
                     summary_lines.append(stripped)
@@ -418,15 +523,21 @@ def build_consolidated_podcast_summary(md_files: List[Path]) -> str:
 
         # Single-line summary
         summary = " ".join(summary_lines).strip()
-        return podcast_name, episode_title, summary, takeaways
+        return podcast_name, episode_title, summary, takeaways, publish_time
 
     for md in md_files:
-        pn, et, summary, takeaways = parse_episode(md)
+        pn, et, summary, takeaways, pt = parse_episode(md)
         # compose header
         if pn:
-            out.append(f"## [{pn}] {et}")
+            if pt:
+                out.append(f"## [{pn}] {et}, {pt}")
+            else:
+                out.append(f"## [{pn}] {et}")
         else:
-            out.append(f"## {et}")
+            if pt:
+                out.append(f"## {et}, {pt}")
+            else:
+                out.append(f"## {et}")
         if summary:
             out.append("")
             out.append(summary)
@@ -469,31 +580,13 @@ def main() -> None:
         en_summary_path.write_text(en_summary or "", encoding="utf-8")
         print(f"Saved ENG podcast summary: {en_summary_path}")
 
-    # 2) Generate CN PDFs from Chinese markdowns
-    for md in md_files:
-        podcast_name, episode_title = extract_episode_info(md, language="cn")
-        base_name = sanitize_filename(episode_title or md.stem)
-        out_name = f"Podcast - {base_name}.pdf"
-        out_path = deliver_cn / out_name
-        try:
-            # Validate readable file
-            _ = md.read_text(encoding="utf-8")
-        except Exception as e:
-            print(f"Skip CN PDF for {md.name}: {e}")
-            continue
-        html = create_podcast_html(md, language="cn")
-        ok = render_pdf(html, out_path)
-        if ok:
-            print(f"CN PDF: {out_path}")
+    # 2) CN: skip rendering PDFs per requirement (only copy originals below)
 
-    # 3) Translate to English and generate ENG PDFs
+    # 3) Translate full podcasts (flash, chunked) and generate ENG PDFs
     eng_md_dir = Path("data") / "podcast_eng" / friday_date
     eng_md_dir.mkdir(parents=True, exist_ok=True)
     for md in md_files:
         podcast_name, episode_title = extract_episode_info(md, language="cn")
-        base_name = sanitize_filename(episode_title or md.stem)
-        out_name = f"Podcast - {base_name}_ENG.pdf"
-        out_path = deliver_en / out_name
 
         try:
             cn_text = md.read_text(encoding="utf-8")
@@ -501,10 +594,28 @@ def main() -> None:
             print(f"Skip ENG PDF for {md.name} (read failed): {e}")
             continue
 
-        en_text = translate_markdown_full(cn_text)
+        # Save or reuse translated markdown
         # Persist translated markdown (optional helper)
         eng_md_path = eng_md_dir / md.name
-        eng_md_path.write_text(en_text or "", encoding="utf-8")
+        if eng_md_path.exists():
+            en_text = eng_md_path.read_text(encoding="utf-8")
+        else:
+            en_text = translate_full_podcast_by_chunks(cn_text, chunk_lines=300, max_workers=10)
+            # Enforce English-only policy
+            en_text = ensure_english_only(en_text)
+            eng_md_path.write_text(en_text or "", encoding="utf-8")
+
+        # Ensure cached content also respects English-only
+        if _has_chinese(en_text):
+            en_text = ensure_english_only(en_text)
+            eng_md_path.write_text(en_text or "", encoding="utf-8")
+
+        # Use English episode title for file naming when available
+        eng_pn, eng_et = extract_episode_info(eng_md_path, language="en")
+        title_for_name = eng_et or episode_title or md.stem
+        base_name = sanitize_filename(title_for_name)
+        out_name = f"podcast_{base_name}.pdf"
+        out_path = deliver_en / out_name
 
         html = create_podcast_html(eng_md_path, language="en")
         ok = render_pdf(html, out_path)
