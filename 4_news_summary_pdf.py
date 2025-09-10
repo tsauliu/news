@@ -52,30 +52,34 @@ def load_text(path: str) -> str:
 
 
 def build_key_takeaway_md(summary_md_text: str) -> str:
-    """Convert combined sector summary into a simple Key Takeaway doc.
+    """Build key_takeaway markdown matching original logic in Archive/5a.
 
-    Strategy: keep h2/h3 structure; convert body lines into bullets.
+    - Keep lines starting with '##' as section headers
+    - For other header lines starting with '#', if length > 10, convert to bullets
+    - Ignore non-header lines
     """
     if not summary_md_text.strip():
         return ""
 
-    lines = [ln.rstrip() for ln in summary_md_text.splitlines()]
-    out: List[str] = [f"# Key News takeaway for Week – {friday_date}", ""]
+    lines = summary_md_text.strip().split("\n")
+    out_lines: List[str] = [f"# Key News takeaway for Week – {friday_date}", ""]
 
-    for ln in lines:
-        if ln.startswith("## "):
-            out.append("")
-            out.append(ln)  # keep section header
-            out.append("")
-        elif ln.startswith("### "):
-            out.append(ln)
-        else:
-            # treat non-header content lines as bullets if reasonably long
-            s = ln.strip().replace("**", "").replace("*", "")
-            if len(s) >= 10 and not s.startswith("-"):
-                out.append(f"- {s}")
+    for line in lines:
+        if line.startswith("##"):
+            out_lines.append("")
+            out_lines.append(line)
+            out_lines.append("")
+        elif line.startswith("#") and len(line) > 10:
+            cleaned = (
+                line.replace("*", "")
+                .replace("**", "")
+                .replace("- ", "")
+                .replace("#", "")
+                .strip()
+            )
+            out_lines.append(f"- {cleaned}")
 
-    return "\n".join(out).strip() + "\n"
+    return "\n".join(out_lines).rstrip() + "\n"
 
 
 def build_detailed_news_md(combined_md_text: str) -> str:
