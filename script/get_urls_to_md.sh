@@ -1,8 +1,11 @@
 #!/bin/bash
-screen -ls | grep 'rss' | cut -d. -f1 | awk '{print $1}' | xargs kill 2>/dev/null || true; screen -dmS rss bash -c 'cd ~/Dropbox/BDAcode/AutoNews && source ~/pyenv/bin/activate && python3 0_RSS.py'
-sleep 60
-screen -ls | grep 'sqlurl' | cut -d. -f1 | awk '{print $1}' | xargs kill 2>/dev/null || true; screen -dmS sqlurl bash -c 'cd ~/Dropbox/BDAcode/AutoNews && source ~/pyenv/bin/activate && python3 1_sql_to_urls.py'
-sleep 15
-screen -ls | grep 'urlmd' | cut -d. -f1 | awk '{print $1}' | xargs kill 2>/dev/null || true; screen -dmS urlmd bash -c 'cd ~/Dropbox/BDAcode/AutoNews && source ~/pyenv/bin/activate && python3 2_get_mds.py'
-sleep 15
-screen -ls | grep 'mdsummary' | cut -d. -f1 | awk '{print $1}' | xargs kill 2>/dev/null || true; screen -dmS mdsummary bash -c 'cd ~/Dropbox/BDAcode/AutoNews && source ~/pyenv/bin/activate && python3 3_md_to_article_summary.py'
+# Consolidated pipeline for new scripts:
+# - 1_fetching_news.py: replaces 0_RSS.py + 1_sql_to_urls.py + 2_get_mds.py
+# - 2_md_to_article_summary.py: replaces 3_md_to_article_summary.py
+
+# Kill any existing sessions from previous runs
+screen -ls | grep 'rss' | cut -d. -f1 | awk '{print $1}' | xargs kill 2>/dev/null || true
+screen -ls | grep 'mdsummary' | cut -d. -f1 | awk '{print $1}' | xargs kill 2>/dev/null || true
+
+# Run both stages sequentially in one screen session to avoid race conditions
+screen -dmS rss bash -c 'cd ~/Dropbox/BDAcode/AutoNews && source ~/pyenv/bin/activate && python3 1_fetching_news.py && python3 2_md_to_article_summary.py'
