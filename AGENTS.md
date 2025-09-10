@@ -1,9 +1,9 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Root Python scripts: step-wise pipeline named with numeric prefixes (e.g., `0_RSS.py` → `4_article_to_overall_summary.py`, `5a/5b/5c_*`, `6*_generate_email*`, `7_copy_all_deliverables.py`, `10_two_week_summary.py`).
-- `pdfreport/`: PDF → Markdown → summary pipeline (`run.py`, `one_pdf_to_md.py`, `two_clean_markdown.py`, `three_md_to_summary.py`, `cdn/`).
-- `prompt/`: LLM prompt assets.  `data/` and `output/`: inputs and generated artifacts (git-ignored). 
+- Root Python scripts: step-wise pipeline named with numeric prefixes (e.g., `1_fetching_news.py` → `4_news_summary_pdf.py`, `5_podcast_summary.py`, `6_sellside_highlights.py`, `7_generate_email.py`, `10_two_week_summary.py`).
+- PDFs are produced in step 4 (`4_news_summary_pdf.py`); no separate `pdfreport/` module in this repo.
+- `prompt/`: LLM prompt assets.  `data/` and `output/`: inputs and generated artifacts (git-ignored).
 - `parameters.py` and `apikey.py`: runtime configuration and API keys (keep local; do not commit secrets).
 
 ## Build, Test, and Development Commands
@@ -11,9 +11,10 @@
   - `python -m venv .venv && source .venv/bin/activate`
   - `pip install -U pip && pip install -r requirements.txt`
 - Run core ingestion/summarization locally (typical flow):
-  - `python 0_RSS.py && python 1_sql_to_urls.py && python 2_get_mds.py && python 3_md_to_article_summary.py && python 4_article_to_overall_summary.py`
-- Generate PDFs/weekly summaries:
-  - `python -c "from pdfreport.run import auto_weekly_reports; auto_weekly_reports()"`
+  - `python 1_fetching_news.py && python 2_md_to_article_summary.py && python 3_article_to_overall_summary.py && python 4_news_summary_pdf.py`
+- Generate PDFs / weekly deliverables:
+  - PDFs: `python 4_news_summary_pdf.py`
+  - Two-week summary: `python 10_two_week_summary.py`
 - Automation helpers (adjust paths in scripts first):
   - `bash script/get_urls_to_md.sh` and `bash script/md_to_summary.sh`
 
@@ -35,4 +36,3 @@
 ## Security & Configuration Tips
 - Never commit API keys or personal data. Keep secrets in `apikey.py` or a local `.env`; `.gitignore` already excludes common artifacts.
 - Review `parameters.py` date logic and any absolute paths in `script/` before running in a new environment.
-
