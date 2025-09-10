@@ -35,6 +35,7 @@ from parameters import (
     ARTICLE_SOURCE,
     errorkeywords,
 )
+from utils import archive_existing_in_target
 
 
 NEWS_LOOKBACK_DAYS = int(os.getenv("NEWS_START", "7"))
@@ -42,7 +43,8 @@ NEWS_LOOKBACK_DAYS = int(os.getenv("NEWS_START", "7"))
 
 # Constants/paths
 URLS_DIR = "data/1_urls"
-RAW_MDS_DIR = f"data/2_raw_mds/{friday_date}"
+RAW_MDS_ROOT_DIR = "data/2_raw_mds"
+RAW_MDS_DIR = f"{RAW_MDS_ROOT_DIR}/{friday_date}"
 RSS_ARTICLES_CSV = "data/rss_articles.csv"
 
 
@@ -344,6 +346,10 @@ def download_wechat_raw_mds(urls_df: pd.DataFrame) -> None:
 
 
 def main() -> None:
+    # Archive existing outputs before generating new ones
+    archive_existing_in_target(URLS_DIR)
+    archive_existing_in_target(RAW_MDS_ROOT_DIR)
+
     _ensure_dirs()
 
     if ARTICLE_SOURCE == "rss":
@@ -378,4 +384,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

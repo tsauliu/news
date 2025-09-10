@@ -4,12 +4,17 @@ import os
 import pandas as pd
 from models import OneAPI_request
 from parameters import friday_date,errorkeywords,get_filename
+from utils import archive_existing_in_target
 
 prompt=open('./prompt/auto_url_to_md.md','r',encoding='utf-8').read()
 
 urls=pd.read_csv(f'./data/1_urls/{friday_date}_article_urls.csv')
 mdraw_path=f'./data/2_raw_mds/{friday_date}'
-md_summary_path=f'./data/3_article_summary/{friday_date}'
+md_summary_root='./data/3_article_summary'
+md_summary_path=f'{md_summary_root}/{friday_date}'
+
+# Archive existing summaries under root before creating today's folder
+archive_existing_in_target(md_summary_root)
 os.makedirs(md_summary_path, exist_ok=True)
 
 def process_url(row):
