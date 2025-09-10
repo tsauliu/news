@@ -179,8 +179,9 @@ def _split_header_and_bullets(summary_text: str) -> Tuple[str, List[str]]:
 
     if first.startswith("**") and first.endswith("**"):
         header = first.strip("*").strip()
-    elif first.startswith("-") and looks_like_title(first):
-        header = first.lstrip("- ")
+    elif first.startswith("- "):
+        # Treat leading bullet as header line (strip marker)
+        header = first[2:].strip()
     else:
         header = first
 
@@ -200,15 +201,7 @@ def _split_header_and_bullets(summary_text: str) -> Tuple[str, List[str]]:
             if cleaned:
                 bullets.append("- " + cleaned)
 
-    # If first line was a bullet but not used as header, include it as bullet
-    if not (first.startswith("**") and first.endswith("**")) and not (
-        first.startswith("-") and looks_like_title(first)
-    ):
-        # Already used as header, so do nothing here
-        pass
-    else:
-        # first was header; do not include as bullet
-        pass
+    # We always treat the first non-empty line as header; do not include it as a bullet
 
     for ln in rest:
         push_bullet(ln)
@@ -304,17 +297,17 @@ def main() -> None:
 
     if not RAW_SELLSIDE_DIR.exists():
         print(f"Raw sellside folder not found: {RAW_SELLSIDE_DIR}")
-        return
+        raw_pdfs = []
+    else:
+        # Discover PDFs
+        raw_pdfs = [p for p in RAW_SELLSIDE_DIR.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"]
 
     prompt = load_prompt()
     if not prompt.strip():
         print("Warning: prompt is empty; summaries may fail.")
 
-    # Discover PDFs
-    raw_pdfs = [p for p in RAW_SELLSIDE_DIR.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"]
     if not raw_pdfs:
         print(f"No PDFs found in {RAW_SELLSIDE_DIR}")
-        return
 
     # Sort by name similar to legacy: by date prefix if present
     def sort_key(p: Path):
@@ -335,31 +328,46 @@ def main() -> None:
     # Stage 2: Process in parallel with 10 processes
     results: List[Tuple[str, Path]] = []  # (file_id, ds_summary_md_path)
     if not staged:
-        print("No PDFs to process after staging.")
-        return
+        # Fallback: if there are existing summaries, rebuild the final markdown
+        existing_ds = [p for p in TEMP_SUM.glob("*.md")]
+        if existing_ds:
+            print(f"No PDFs staged. Found {len(existing_ds)} existing summaries; rebuilding highlights...")
+            results = [(p.stem, p) for p in sorted(existing_ds)]
+        else:
+            # Another fallback: if CDN has PDFs, process them directly
+            if CDN_DIR.exists():
+                cdn_pdfs = [p for p in CDN_DIR.iterdir() if p.is_file() and p.suffix.lower() == ".pdf"]
+                if not cdn_pdfs:
+                    print("No PDFs to process after staging.")
+                    return
+                staged = [(extract_file_id(p.name), p) for p in sorted(cdn_pdfs)]
+            else:
+                print("No PDFs to process after staging.")
+                return
 
-    MAX_PROCESSES = 10
-    print(f"Using {MAX_PROCESSES} processes for conversion/clean/summary...")
-    with ProcessPoolExecutor(max_workers=MAX_PROCESSES) as ex:
-        futs = [
-            ex.submit(
-                _process_one,
-                str(cdn_pdf),
-                file_id,
-                str(TEMP_MD),
-                str(TEMP_CLEAN),
-                str(TEMP_SUM),
-                prompt,
-            )
-            for (file_id, cdn_pdf) in staged
-        ]
+    if staged:
+        MAX_PROCESSES = 10
+        print(f"Using {MAX_PROCESSES} processes for conversion/clean/summary...")
+        with ProcessPoolExecutor(max_workers=MAX_PROCESSES) as ex:
+            futs = [
+                ex.submit(
+                    _process_one,
+                    str(cdn_pdf),
+                    file_id,
+                    str(TEMP_MD),
+                    str(TEMP_CLEAN),
+                    str(TEMP_SUM),
+                    prompt,
+                )
+                for (file_id, cdn_pdf) in staged
+            ]
 
-        for fut in as_completed(futs):
-            res = fut.result()
-            if res is None:
-                continue
-            fid, ds_md_str = res
-            results.append((fid, Path(ds_md_str)))
+            for fut in as_completed(futs):
+                res = fut.result()
+                if res is None:
+                    continue
+                fid, ds_md_str = res
+                results.append((fid, Path(ds_md_str)))
 
     if not results:
         print("No summaries generated; nothing to write to highlights.")
