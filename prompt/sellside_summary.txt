@@ -30,3 +30,4 @@
 - Waymo 领先并扩张：Waymo 在 AV 领域领先，正向 high-density 城市扩张以实现 UE 打平。其通用 driver 技术可快速适应新城市（如 LA），并通过优化用户体验和降低 hardware costs 来提升 user trust。
 - 不同策略与合作：Zoox 采用自建车队和 app 的 direct to consumer 模式，可能影响 UBER/LYFT。Wayve（L2/L3 -> L4）和 Nuro（L4 -> L2）等倾向与 OEMs 和 rideshare platforms 合作
 ————————
+
