@@ -346,9 +346,10 @@ def download_wechat_raw_mds(urls_df: pd.DataFrame) -> None:
 
 
 def main() -> None:
-    # Archive existing outputs before generating new ones
-    archive_existing_in_target(URLS_DIR)
-    archive_existing_in_target(RAW_MDS_ROOT_DIR)
+    # Archive existing outputs before generating new ones, but keep this week's
+    # files/folders to allow caching and incremental runs.
+    archive_existing_in_target(URLS_DIR, exclude_contains=[friday_date])
+    archive_existing_in_target(RAW_MDS_ROOT_DIR, exclude_names=[friday_date])
 
     _ensure_dirs()
 

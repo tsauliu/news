@@ -13,8 +13,8 @@ mdraw_path=f'./data/2_raw_mds/{friday_date}'
 md_summary_root='./data/3_article_summary'
 md_summary_path=f'{md_summary_root}/{friday_date}'
 
-# Archive existing summaries under root before creating today's folder
-archive_existing_in_target(md_summary_root)
+# Archive existing summaries under root but keep this week's folder
+archive_existing_in_target(md_summary_root, exclude_names=[friday_date])
 os.makedirs(md_summary_path, exist_ok=True)
 
 def process_url(row):

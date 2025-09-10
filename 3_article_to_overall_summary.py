@@ -9,7 +9,7 @@ from parameters import friday_date,errorkeywords,sector_list
 from utils import archive_existing_in_target
 output_dir = f'data/4_combined_mds'
 os.makedirs(output_dir, exist_ok=True)
-archive_existing_in_target(output_dir)
+archive_existing_in_target(output_dir, exclude_contains=[friday_date])
 
 def merge_md_files():
     """Merge markdown files in raw_mds into separate files by sector"""
@@ -90,7 +90,7 @@ prompt = open('./prompt/auto_md_to_summary.md', 'r', encoding='utf-8').read()
 # Create summary directory
 summary_dir = f'data/5_summary_mds'
 os.makedirs(summary_dir, exist_ok=True)
-archive_existing_in_target(summary_dir)
+archive_existing_in_target(summary_dir, exclude_contains=[friday_date])
 
 #%%
 # Initialize a dictionary to store summaries by sector

@@ -36,7 +36,13 @@ def _unique_destination_path(dest_dir: str, name: str) -> str:
         i += 1
 
 
-def archive_existing_in_target(target_dir: str, ss_name: str = "SS") -> None:
+def archive_existing_in_target(
+    target_dir: str,
+    ss_name: str = "SS",
+    *,
+    exclude_names: list[str] | None = None,
+    exclude_contains: list[str] | None = None,
+) -> None:
     """Move existing files/subfolders in `target_dir` into `target_dir/ss_name`.
 
     - Creates `target_dir` and `target_dir/ss_name` if missing.
@@ -56,11 +62,20 @@ def archive_existing_in_target(target_dir: str, ss_name: str = "SS") -> None:
     except FileNotFoundError:
         return
 
+    exclude_names = set(exclude_names or [])
+    exclude_contains = list(exclude_contains or [])
+
     for name in entries:
         if name == ss_name:
             continue
         # Skip obvious hidden files that shouldn't be archived (optional)
         if name.startswith('.'):
+            continue
+        # Skip explicit names (e.g., current week folder)
+        if name in exclude_names:
+            continue
+        # Skip if name includes any of the substrings to exclude
+        if any(sub in name for sub in exclude_contains):
             continue
 
         src_path = os.path.join(target_dir, name)
@@ -71,4 +86,3 @@ def archive_existing_in_target(target_dir: str, ss_name: str = "SS") -> None:
             print(f"Archived '{src_path}' -> '{dest_path}'")
         except Exception as e:
             print(f"Warning: failed to archive '{src_path}': {e}")
-
