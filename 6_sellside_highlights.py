@@ -325,6 +325,29 @@ def main() -> None:
         cdn_pdf, file_id = move_pdf_to_cdn(pdf)
         staged.append((file_id, cdn_pdf))
 
+    # After staging, attempt to remove the source folder and any leftover files
+    try:
+        if RAW_SELLSIDE_DIR.exists():
+            leftover = list(RAW_SELLSIDE_DIR.iterdir())
+            if leftover:
+                # Try removing any leftover files (e.g., .DS_Store)
+                only_files = all(p.is_file() for p in leftover)
+                if only_files:
+                    for p in leftover:
+                        try:
+                            p.unlink()
+                        except Exception as e:
+                            print(f"Warning: failed to remove leftover file {p}: {e}")
+                    # refresh listing
+                    leftover = list(RAW_SELLSIDE_DIR.iterdir())
+            if not leftover:
+                RAW_SELLSIDE_DIR.rmdir()
+                print(f"Removed empty source folder: {RAW_SELLSIDE_DIR}")
+            else:
+                print(f"Skip removing source folder (not empty): {RAW_SELLSIDE_DIR}")
+    except Exception as e:
+        print(f"Warning: source folder cleanup issue: {e}")
+
     # Stage 2: Process in parallel with 10 processes
     results: List[Tuple[str, Path]] = []  # (file_id, ds_summary_md_path)
     if not staged:
