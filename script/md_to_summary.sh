@@ -43,6 +43,9 @@ screen -dmS "$S5" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 5_podcast_summa
 echo "Launching 6_sellside_highlights.py in $S6"
 screen -dmS "$S6" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 6_sellside_highlights.py"
 
+# After these three, sleep another 120 seconds before launching email
+sleep 120
+
 echo "Launching 7_generate_email.py in $S7"
 screen -dmS "$S7" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 7_generate_email.py"
 
