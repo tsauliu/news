@@ -7,7 +7,7 @@ Tasks:
 - Store intermediate artifacts under `data/temp/sellside/{YYYY-MM-DD}`
 - Stage PDFs locally under `data/sellside_reports/{YYYY-MM-DD}/<id>.pdf` and upload to Google Cloud Storage
 - Emit final highlights markdown to `data/6_final_mds/{YYYY-MM-DD}_sellside_highlights.md` with GCS links
-- Remove raw files after moving them to the local staging folder
+- Keep raw files in the source folder (do not delete local originals)
 
 Notes:
 - Reuses the prompt (moved to `prompt/sellside_summary.txt`)
@@ -87,15 +87,11 @@ def extract_file_id(pdf_name: str) -> str:
 def move_pdf_to_cdn(raw_pdf: Path) -> Tuple[Path, str]:
     """Copy raw PDF to local staging folder as <id>.pdf and return (staged_path, id).
 
-    Also deletes the original raw file after successful copy.
+    Local originals are preserved (no deletion of source files).
     """
     file_id = extract_file_id(raw_pdf.name)
     cdn_pdf = CDN_DIR / f"{file_id}.pdf"
     shutil.copy2(str(raw_pdf), str(cdn_pdf))
-    try:
-        raw_pdf.unlink()
-    except Exception as e:
-        print(f"Warning: failed to remove raw file {raw_pdf}: {e}")
     return cdn_pdf, file_id
 
 
@@ -539,28 +535,7 @@ def main() -> None:
             except Exception as e:
                 print(f"GCS upload failed for {cdn_pdf.name}: {e}")
 
-    # After staging, attempt to remove the source folder and any leftover files
-    try:
-        if RAW_SELLSIDE_DIR.exists():
-            leftover = list(RAW_SELLSIDE_DIR.iterdir())
-            if leftover:
-                # Try removing any leftover files (e.g., .DS_Store)
-                only_files = all(p.is_file() for p in leftover)
-                if only_files:
-                    for p in leftover:
-                        try:
-                            p.unlink()
-                        except Exception as e:
-                            print(f"Warning: failed to remove leftover file {p}: {e}")
-                    # refresh listing
-                    leftover = list(RAW_SELLSIDE_DIR.iterdir())
-            if not leftover:
-                RAW_SELLSIDE_DIR.rmdir()
-                print(f"Removed empty source folder: {RAW_SELLSIDE_DIR}")
-            else:
-                print(f"Skip removing source folder (not empty): {RAW_SELLSIDE_DIR}")
-    except Exception as e:
-        print(f"Warning: source folder cleanup issue: {e}")
+    # Keep source folder and files intact (no cleanup/deletion of local originals)
 
     # Stage 2: Process in parallel with 10 processes
     results: List[Tuple[str, Path]] = []  # (file_id, ds_summary_md_path)
