@@ -36,6 +36,33 @@ def read_text_if_exists(path: Path) -> str:
         return ""
 
 
+# ---------- Markdown cleanup helpers ----------
+
+def clean_markdown_inline(text: str) -> str:
+    """Remove common inline Markdown markers from text for clean HTML rendering.
+
+    - Strips headers ('# '), emphasis (**bold**, *italic*, __bold__, _italic_)
+    - Converts links/images to plain text (keeps link text only)
+    - Removes inline code backticks and leading blockquote markers
+    """
+    if not text:
+        return ""
+    # Images: ![alt](url) -> alt
+    text = re.sub(r"!\[([^\]]*)\]\([^\)]*\)", r"\1", text)
+    # Links: [text](url) -> text
+    text = re.sub(r"\[([^\]]+)\]\([^\)]*\)", r"\1", text)
+    # Headers at start: #### Title -> Title
+    text = re.sub(r"^\s{0,3}#{1,6}\s*", "", text)
+    # Blockquote at start: > quote -> quote
+    text = re.sub(r"^\s*>\s*", "", text)
+    # Bold/italic emphasis
+    text = re.sub(r"(\*\*|__)(.+?)(\1)", r"\2", text)
+    text = re.sub(r"(\*|_)(.+?)(\1)", r"\2", text)
+    # Inline code: `code` -> code
+    text = text.replace("`", "")
+    return text.strip()
+
+
 # ---------- Podcast parsing (from Archive with light guards) ----------
 
 def parse_consolidated_podcast_summary(file_path: Path) -> List[Tuple[str, str, str, List[str]]]:
@@ -74,15 +101,18 @@ def parse_consolidated_podcast_summary(file_path: Path) -> List[Tuple[str, str, 
                 except Exception:
                     podcast_name = ""
                     episode_with_date = header
-            current = {"name": podcast_name, "title": episode_with_date}
+            current = {
+                "name": clean_markdown_inline(podcast_name),
+                "title": clean_markdown_inline(episode_with_date),
+            }
             current_summary = ""
             current_bullets = []
             in_summary_paragraph = True
         elif in_summary_paragraph and line.strip() and not line.startswith("-"):
-            current_summary = line.strip()
+            current_summary = clean_markdown_inline(line.strip())
             in_summary_paragraph = False
         elif line.strip().startswith("- "):
-            current_bullets.append(line.strip()[2:])
+            current_bullets.append(clean_markdown_inline(line.strip()[2:]))
 
     if current:
         podcasts.append((current.get("name", ""), current.get("title", ""), current_summary, current_bullets))
@@ -101,13 +131,10 @@ def parse_key_takeaway_sections_cn(text: str) -> List[Tuple[str, List[str]]]:
         if line.startswith("##"):
             if current_section and current_bullets:
                 sections.append((current_section, current_bullets))
-            current_section = line.replace("##", "").replace("：", "").strip()
+            current_section = clean_markdown_inline(line.replace("##", "").replace("：", "").strip())
             current_bullets = []
         elif line.strip().startswith("- "):
-            bullet_text = line.strip()[2:]
-            bullet_text = (
-                bullet_text.replace("**", "").replace("[", "").replace("]", "").replace("(", " ").replace(")", "")
-            )
+            bullet_text = clean_markdown_inline(line.strip()[2:])
             if bullet_text:
                 current_bullets.append(bullet_text)
     if current_section and current_bullets:
@@ -124,13 +151,12 @@ def parse_key_takeaway_sections_en(text: str) -> List[Tuple[str, List[str]]]:
         if line.startswith("##"):
             if current_section and current_bullets:
                 sections.append((current_section, current_bullets))
-            current_section = line.replace("##", "").replace("：", ":").rstrip(":").strip()
+            current_section = clean_markdown_inline(
+                line.replace("##", "").replace("：", ":").rstrip(":").strip()
+            )
             current_bullets = []
         elif line.strip().startswith("- "):
-            bullet_text = line.strip()[2:]
-            bullet_text = (
-                bullet_text.replace("**", "").replace("[", "").replace("]", "").replace("(", " ").replace(")", "")
-            )
+            bullet_text = clean_markdown_inline(line.strip()[2:])
             if bullet_text:
                 current_bullets.append(bullet_text)
     if current_section and current_bullets:
@@ -152,11 +178,11 @@ def parse_sellside_reports(text: str) -> List[Tuple[str, List[str], str]]:
             if current_report:
                 reports.append((current_report, current_bullets, current_link))
             title = line.strip("*")
-            current_report = title
+            current_report = clean_markdown_inline(title)
             current_bullets = []
             current_link = ""
         elif line.startswith("- "):
-            current_bullets.append(line[2:])
+            current_bullets.append(clean_markdown_inline(line[2:]))
         elif line.startswith("[Report Link]"):
             m = re.search(r"\((.*?)\)", line)
             if m:
