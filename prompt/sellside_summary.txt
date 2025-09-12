@@ -17,17 +17,27 @@
 4. **客观准确**：仅基于报告内容，不添加外部知识或个人观点
 5. **信息来源**：严禁添加报告原文以外的任何信息，优先从报告靠前部分提取信息
 
-# 输出格式
-1. **标题行**：`日期,券商：报告标题`（使用原文语言）
-   - 优先提取报告第一行信息
-   - 若无法提取，基于内容生成符合格式的标题
-2. **摘要要点**：紧随标题后换行输出2-4个bullet points
+# 输出格式（严格）
+1. **标题行（必须为以下精确模板）**：`YYYY-MM-DD,券商: 报告标题`
+   - 日期：从报告正文/封面/页眉页脚中提取并转为 ISO 格式 `YYYY-MM-DD`（零填充）。
+     可识别的原始日期写法包括：`2025-09-10`、`2025/09/10`、`10 September 2025 / 10 Sep 2025`、`September 10, 2025`、`2025年9月10日`。
+     严禁输出英文月份或中文“年/月/日”字样；一律转换为数字日期，如 `2025-09-10`。
+   - 券商：使用报告中出现的正式名称（如“Deutsche Bank”“BofA Securities”），不要自创缩写（如“BofAS”）。
+   - 冒号与逗号：全部使用 ASCII 符号，格式严格为 `YYYY-MM-DD,券商: 标题`（逗号后无空格，冒号后有一个空格）。
+   - 日期缺失时：在全文中查找最合理的发布日期/报告日期；如出现多个日期，优先“封面/版权页标注的发布日期”或“正文最靠前的完整年月日”。严禁使用“今天日期”或编造日期。
+   - 首行仅输出以上标题文本：不要加粗、不要编号、不要引号或多余标点。
+2. **摘要要点**：紧随标题后换行输出 2-4 个 bullet points
    - 直接列出要点，不添加任何介绍性短语
    - 遵循上述语言处理规则
 
 # 示例
-**2025-04-14,BERNSTEIN: UBER and LYFT Takeaways from an AV Conference**
+正确示例：
+2025-04-14,BERNSTEIN: UBER and LYFT Takeaways from an AV Conference
 - Waymo 领先并扩张：Waymo 在 AV 领域领先，正向 high-density 城市扩张以实现 UE 打平。其通用 driver 技术可快速适应新城市（如 LA），并通过优化用户体验和降低 hardware costs 来提升 user trust。
 - 不同策略与合作：Zoox 采用自建车队和 app 的 direct to consumer 模式，可能影响 UBER/LYFT。Wayve（L2/L3 -> L4）和 Nuro（L4 -> L2）等倾向与 OEMs 和 rideshare platforms 合作
-————————
 
+错误示例（请修正为 ISO 日期与 ASCII 标点）：
+- 10 September 2025, BofAS: AVs in the news -> 2025-09-10,BofA Securities: AVs in the news
+- 2025年9月10日，某券商：标题 -> 2025-09-10,某券商: 标题
+
+————————
