@@ -21,6 +21,8 @@ import os
 import shutil
 from pathlib import Path
 from typing import List, Tuple, Optional
+import re
+from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from markitdown import MarkItDown
@@ -209,6 +211,178 @@ def _split_header_and_bullets(summary_text: str) -> Tuple[str, List[str]]:
     return header, bullets
 
 
+def _parse_iso_date_from_text(text: str) -> Optional[str]:
+    """Find the first date in text and return it as YYYY-MM-DD.
+
+    Handles:
+    - 2025-09-10 or 2025/09/10
+    - 10 September 2025 / 10 Sep 2025
+    - September 10, 2025 / Sep 10 2025
+    - 2025年9月10日 (Chinese)
+    """
+    if not text:
+        return None
+
+    # ISO-like: YYYY-MM-DD or YYYY/MM/DD
+    m = re.search(r"(20\d{2})[-/](0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])", text)
+    if m:
+        y, mo, d = m.group(1), m.group(2), m.group(3)
+        try:
+            dt = datetime(int(y), int(mo), int(d))
+            return dt.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+
+    # Chinese: YYYY年MM月DD日
+    m = re.search(r"(20\d{2})\s*年\s*(0?[1-9]|1[0-2])\s*月\s*(0?[1-9]|[12]\d|3[01])\s*日?", text)
+    if m:
+        y, mo, d = m.group(1), m.group(2), m.group(3)
+        try:
+            dt = datetime(int(y), int(mo), int(d))
+            return dt.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+
+    # Month name helpers
+    MONTHS = {
+        "jan": 1,
+        "january": 1,
+        "feb": 2,
+        "february": 2,
+        "mar": 3,
+        "march": 3,
+        "apr": 4,
+        "april": 4,
+        "may": 5,
+        "jun": 6,
+        "june": 6,
+        "jul": 7,
+        "july": 7,
+        "aug": 8,
+        "august": 8,
+        "sep": 9,
+        "sept": 9,
+        "september": 9,
+        "oct": 10,
+        "october": 10,
+        "nov": 11,
+        "november": 11,
+        "dec": 12,
+        "december": 12,
+    }
+
+    # D Month YYYY, e.g., 10 September 2025 or 07 Sep 2025
+    m = re.search(
+        r"\b(0?[1-9]|[12]\d|3[01])\s+([A-Za-z]{3,9})\.?\s+(20\d{2})\b",
+        text,
+    )
+    if m:
+        d, mon, y = m.group(1), m.group(2), m.group(3)
+        mon_idx = MONTHS.get(mon.lower())
+        if mon_idx:
+            try:
+                dt = datetime(int(y), int(mon_idx), int(d))
+                return dt.strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
+    # Month D, YYYY or Month D YYYY, e.g., September 10, 2025 / Sep 10 2025
+    m = re.search(
+        r"\b([A-Za-z]{3,9})\.?\s+(0?[1-9]|[12]\d|3[01]),?\s+(20\d{2})\b",
+        text,
+    )
+    if m:
+        mon, d, y = m.group(1), m.group(2), m.group(3)
+        mon_idx = MONTHS.get(mon.lower())
+        if mon_idx:
+            try:
+                dt = datetime(int(y), int(mon_idx), int(d))
+                return dt.strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
+    return None
+
+
+def _strip_leading_date_prefix(s: str) -> str:
+    """Remove any leading date expression and following punctuation/space from a string."""
+    if not s:
+        return s
+    patterns = [
+        r"^\s*(20\d{2})[-/](0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])\s*[,，]?\s*",
+        r"^\s*(0?[1-9]|[12]\d|3[01])\s+[A-Za-z]{3,9}\.?\s+(20\d{2})\s*[,，]?\s*",
+        r"^\s*[A-Za-z]{3,9}\.?\s+(0?[1-9]|[12]\d|3[01]),?\s+(20\d{2})\s*[,，]?\s*",
+        r"^\s*(20\d{2})\s*年\s*(0?[1-9]|1[0-2])\s*月\s*(0?[1-9]|[12]\d|3[01])\s*日?\s*[,，]?\s*",
+    ]
+    out = s
+    for pat in patterns:
+        out = re.sub(pat, "", out)
+    return out.strip()
+
+
+def _normalize_header(header: str, summary_text: str, cleaned_text: Optional[str]) -> str:
+    """Normalize a header to: YYYY-MM-DD,<Broker>: <Title> with Friday fallback.
+
+    Strategy:
+    1) Prefer headers that already start with an ISO date: "YYYY-MM-DD,<Broker>: <Title>".
+       - Use that date if within +/-14 days of the folder Friday date; else fallback to Friday date.
+    2) Otherwise, try to extract date from header/summary/cleaned and validate +/-14 days; else fallback to Friday.
+    3) Derive broker/title from the header around the first colon.
+    """
+    # Folder's Friday date
+    try:
+        friday_dt = datetime.strptime(friday_date, "%Y-%m-%d")
+    except Exception:
+        friday_dt = None
+
+    header = header.strip()
+
+    # Case 1: Header begins with ISO date
+    m = re.match(r"^\s*(\d{4}-\d{2}-\d{2})\s*[,，]?\s*([^:：]+?)\s*[:：]\s*(.+)$", header)
+    if m:
+        cand_date = m.group(1)
+        broker = m.group(2).strip().strip(",，")
+        title = m.group(3).strip()
+        # Validate date vs Friday
+        keep_parsed = False
+        if friday_dt:
+            try:
+                cand_dt = datetime.strptime(cand_date, "%Y-%m-%d")
+                keep_parsed = abs((cand_dt - friday_dt).days) <= 14
+            except Exception:
+                keep_parsed = False
+        date_iso = cand_date if keep_parsed else friday_date
+        return f"{date_iso},{broker}: {title}"
+
+    # Case 2: Generic extraction
+    date_iso = _parse_iso_date_from_text(header) or _parse_iso_date_from_text(summary_text)
+    if not date_iso and cleaned_text:
+        date_iso = _parse_iso_date_from_text(cleaned_text)
+
+    keep_parsed = False
+    if date_iso and friday_dt:
+        try:
+            cand_dt = datetime.strptime(date_iso, "%Y-%m-%d")
+            keep_parsed = abs((cand_dt - friday_dt).days) <= 14
+        except Exception:
+            keep_parsed = False
+    if not date_iso or not keep_parsed:
+        date_iso = friday_date
+
+    # Split header into left/right by colon
+    left = header
+    title = ""
+    m2 = re.match(r"^(.*?)[\s]*[:：][\s]*(.*)$", header)
+    if m2:
+        left = m2.group(1)
+        title = m2.group(2).strip()
+
+    broker = _strip_leading_date_prefix(left).strip().strip(",，")
+    if not title:
+        return f"{date_iso},{broker}" if broker else date_iso
+    return f"{date_iso},{broker}: {title}"
+
+
 def build_highlights_md(items: List[Tuple[str, Path]]) -> str:
     """Compose final highlights markdown matching SS/2025-09-05 format."""
     out_lines: List[str] = [f"# Sellside highlights for Week – {friday_date}", ""]
@@ -221,6 +395,18 @@ def build_highlights_md(items: List[Tuple[str, Path]]) -> str:
             continue
 
         header, bullets = _split_header_and_bullets(summary)
+
+        # Try to load the corresponding cleaned markdown to aid date extraction
+        cleaned_text: Optional[str] = None
+        try:
+            cleaned_path = TEMP_CLEAN / md_path.name
+            if cleaned_path.exists():
+                cleaned_text = cleaned_path.read_text(encoding="utf-8")
+        except Exception:
+            cleaned_text = None
+
+        # Normalize header to desired format with Friday fallback
+        header = _normalize_header(header, summary, cleaned_text)
 
         # Section header
         out_lines.append("")  # ensure an empty line before each section
@@ -245,8 +431,17 @@ def translate_highlights_to_english(cn_path: Path, eng_path: Path) -> bool:
         print(f"CN highlights not found: {cn_path}")
         return False
     if eng_path.exists():
-        print(f"ENG highlights already exist: {eng_path}")
-        return True
+        try:
+            cn_mtime = cn_path.stat().st_mtime
+            en_mtime = eng_path.stat().st_mtime
+            if cn_mtime <= en_mtime:
+                print(f"ENG highlights already up-to-date: {eng_path}")
+                return True
+            else:
+                print("CN updated after ENG; regenerating English translation...")
+        except Exception:
+            # If stat fails, attempt translation anyway
+            pass
     try:
         text = cn_path.read_text(encoding="utf-8")
         # Load translation prompt
