@@ -17,6 +17,7 @@ import argparse
 import os
 import re
 from pathlib import Path
+import shutil
 from typing import List, Tuple
 
 from parameters import friday_date
@@ -555,8 +556,22 @@ def generate_one(lang: str, date_str: str) -> Path | None:
 
     # Save to Deliverable path under CN/ENG
     deliver_dir = (
-        Path.home() / "Dropbox" / "MyServerFiles" / "AutoWeekly" / "Deliverable" / date_str / ("CN" if lang == "CN" else "ENG")
+        Path.home()
+        / "Dropbox"
+        / "MyServerFiles"
+        / "AutoWeekly"
+        / "Deliverable"
+        / date_str
+        / ("CN" if lang == "CN" else "ENG")
     )
+
+    # Clean target folder if exists (overwrite behavior)
+    try:
+        if deliver_dir.exists():
+            shutil.rmtree(deliver_dir)
+            print(f"🧹 Removed existing folder: {deliver_dir}")
+    except Exception as e:
+        print(f"⚠️ Failed to clean folder {deliver_dir}: {e}")
     output_path = deliver_dir / out_name
     write_mht(html, output_path)
 
