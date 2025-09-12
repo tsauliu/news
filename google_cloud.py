@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Optional
+from functools import lru_cache
 
 
 def _bool_env(var: str, default: bool) -> bool:
@@ -38,6 +39,67 @@ def _safe_import_storage():
         raise RuntimeError(
             "google-cloud-storage is required. Add it to requirements and install."
         ) from e
+
+
+def _find_service_account_file() -> Optional[Path]:
+    """Find a service account JSON file to use by default.
+
+    Precedence:
+    1) `GCP_SERVICE_ACCOUNT_FILE` env var
+    2) `GOOGLE_APPLICATION_CREDENTIALS` env var
+    3) `./service-account.json` (cwd)
+    4) `<repo>/service-account.json` (same dir as this module)
+    """
+    candidates = []
+
+    env1 = os.getenv("GCP_SERVICE_ACCOUNT_FILE")
+    if env1:
+        candidates.append(Path(env1))
+
+    env2 = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if env2:
+        candidates.append(Path(env2))
+
+    candidates.append(Path.cwd() / "service-account.json")
+    candidates.append(Path(__file__).resolve().parent / "service-account.json")
+
+    for p in candidates:
+        try:
+            if p and Path(p).exists():
+                return Path(p)
+        except Exception:
+            continue
+    return None
+
+
+@lru_cache(maxsize=1)
+def _get_storage_client():
+    """Return a configured Storage client, preferring a local service account JSON.
+
+    Falls back to Application Default Credentials if no JSON is found.
+    """
+    storage = _safe_import_storage()
+
+    sa_path = _find_service_account_file()
+    if sa_path is not None:
+        try:
+            from google.oauth2 import service_account  # type: ignore
+
+            scopes = [
+                "https://www.googleapis.com/auth/devstorage.read_write",
+                # "https://www.googleapis.com/auth/cloud-platform",  # optional broader scope
+            ]
+            creds = service_account.Credentials.from_service_account_file(
+                str(sa_path), scopes=scopes
+            )
+            project = getattr(creds, "project_id", None)
+            return storage.Client(project=project, credentials=creds)
+        except Exception as e:
+            # Fallback to ADC if SA load fails
+            print(f"Warning: failed to load service account from {sa_path}: {e}")
+
+    # Default: ADC
+    return storage.Client()
 
 
 def upload_to_gcs(
@@ -73,7 +135,7 @@ def upload_to_gcs(
     # Resolve blob path
     blob_name = blob_path or lp.name
 
-    client = storage.Client()
+    client = _get_storage_client()
     bucket_ref = client.bucket(bucket)
     blob = bucket_ref.blob(blob_name)
 
