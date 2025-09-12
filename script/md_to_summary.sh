@@ -25,35 +25,34 @@ kill_screen "$S10"
 
 REPO_DIR=~/Dropbox/BDAcode/AutoNews
 
-# Always use user's pyenv; do not create or fall back to other envs.
-# Do not block if missing; continue to run system python.
-ACTIVATE='. ~/pyenv/bin/activate 2>/dev/null || true'
+# Always use user's pyenv; require it to exist. If activation fails, block the step.
+ACTIVATE='. ~/pyenv/bin/activate'
 
 echo "Launching 3_article_to_overall_summary.py in $S3"
-screen -dmS "$S3" bash -lc "cd $REPO_DIR; $ACTIVATE; python3 3_article_to_overall_summary.py"
+screen -dmS "$S3" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 3_article_to_overall_summary.py"
 
 # After summary, sleep 120 seconds before launching the rest
 sleep 120
 
 echo "Launching 4_news_summary_pdf.py in $S4"
-screen -dmS "$S4" bash -lc "cd $REPO_DIR; $ACTIVATE; python3 4_news_summary_pdf.py"
+screen -dmS "$S4" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 4_news_summary_pdf.py"
 
 echo "Launching 5_podcast_summary.py in $S5"
-screen -dmS "$S5" bash -lc "cd $REPO_DIR; $ACTIVATE; python3 5_podcast_summary.py"
+screen -dmS "$S5" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 5_podcast_summary.py"
 
 echo "Launching 6_sellside_highlights.py in $S6"
-screen -dmS "$S6" bash -lc "cd $REPO_DIR; $ACTIVATE; python3 6_sellside_highlights.py"
+screen -dmS "$S6" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 6_sellside_highlights.py"
 
 # After these three, sleep another 120 seconds before launching email
 sleep 120
 
 echo "Launching 7_generate_email.py in $S7"
-screen -dmS "$S7" bash -lc "cd $REPO_DIR; $ACTIVATE; python3 7_generate_email.py"
+screen -dmS "$S7" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 7_generate_email.py"
 
 # When all started, sleep 600s then run the two-week summary
 sleep 600
 
 echo "Launching 10_two_week_summary.py in $S10"
-screen -dmS "$S10" bash -lc "cd $REPO_DIR; $ACTIVATE; python3 10_two_week_summary.py"
+screen -dmS "$S10" bash -lc "cd $REPO_DIR && $ACTIVATE && python3 10_two_week_summary.py"
 
 echo "All screens launched. Attach with: screen -r <name>"
