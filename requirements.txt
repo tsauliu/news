@@ -12,3 +12,4 @@ google-genai
 tqdm>=4.60.0           # Progress bar for multi-threaded operations
 markdown               # Markdown -> HTML conversion for PDFs
 weasyprint             # HTML -> PDF rendering
+google-cloud-storage   # Upload PDFs to GCS for sharing

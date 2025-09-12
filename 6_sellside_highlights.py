@@ -5,9 +5,9 @@ Tasks:
 - Ingest raw sellside PDFs from `~/Dropbox/MyServerFiles/AutoWeekly/Sellside/{YYYY-MM-DD}`
 - Convert PDF -> Markdown, clean, and summarize using existing logic
 - Store intermediate artifacts under `data/temp/sellside/{YYYY-MM-DD}`
-- Copy PDFs to CDN folder `data/sellside_reports/{YYYY-MM-DD}/<id>.pdf` (same hosting path semantics)
-- Emit final highlights markdown to `data/6_final_mds/{YYYY-MM-DD}_sellside_highlights.md`
-- Remove raw files after moving them to the CDN folder
+- Stage PDFs locally under `data/sellside_reports/{YYYY-MM-DD}/<id>.pdf` and upload to Google Cloud Storage
+- Emit final highlights markdown to `data/6_final_mds/{YYYY-MM-DD}_sellside_highlights.md` with GCS links
+- Remove raw files after moving them to the local staging folder
 
 Notes:
 - Reuses the prompt (moved to `prompt/sellside_summary.txt`)
@@ -28,6 +28,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from markitdown import MarkItDown
 
 from parameters import friday_date
+from google_cloud import upload_to_gcs
 from models import OneAPI_request
 def _clean_markdown_contents(raw_text: str) -> str:
     """Replicate the cleaning heuristic formerly in pdfreport.two_clean_markdown.
@@ -47,6 +48,7 @@ def _clean_markdown_contents(raw_text: str) -> str:
 
 # Paths
 RAW_SELLSIDE_DIR = Path.home() / "Dropbox" / "MyServerFiles" / "AutoWeekly" / "Sellside" / friday_date
+# Local staging before upload to GCS
 CDN_DIR = Path("data/sellside_reports") / friday_date
 TEMP_ROOT = Path("data/temp/sellside") / friday_date
 TEMP_MD = TEMP_ROOT / "02_markdown"
@@ -83,7 +85,7 @@ def extract_file_id(pdf_name: str) -> str:
 
 
 def move_pdf_to_cdn(raw_pdf: Path) -> Tuple[Path, str]:
-    """Copy raw PDF to CDN folder as <id>.pdf and return (cdn_path, id).
+    """Copy raw PDF to local staging folder as <id>.pdf and return (staged_path, id).
 
     Also deletes the original raw file after successful copy.
     """
@@ -383,11 +385,11 @@ def _normalize_header(header: str, summary_text: str, cleaned_text: Optional[str
     return f"{date_iso},{broker}: {title}"
 
 
-def build_highlights_md(items: List[Tuple[str, Path]]) -> str:
+def build_highlights_md(items: List[Tuple[str, Path, str]]) -> str:
     """Compose final highlights markdown matching SS/2025-09-05 format."""
     out_lines: List[str] = [f"# Sellside highlights for Week – {friday_date}", ""]
 
-    for file_id, md_path in items:
+    for file_id, md_path, url in items:
         try:
             summary = md_path.read_text(encoding="utf-8")
         except Exception as e:
@@ -418,8 +420,8 @@ def build_highlights_md(items: List[Tuple[str, Path]]) -> str:
             out_lines.extend(bullets)
             out_lines.append("")
 
-        # Link
-        out_lines.append(f"[Report Link](https://auto.bda-news.com/{friday_date}/{file_id}.pdf)")
+        # Link to GCS object
+        out_lines.append(f"[Report Link]({url})")
         out_lines.append("")
 
     return "\n".join(out_lines).rstrip() + "\n"
@@ -513,12 +515,29 @@ def main() -> None:
         return name
     raw_pdfs.sort(key=sort_key, reverse=True)
 
-    # Stage 1: Move all raw PDFs into CDN folder (sequential for safety)
+    # Stage 1: Move all raw PDFs into local staging folder (sequential for safety)
     staged: List[Tuple[str, Path]] = []  # (file_id, cdn_pdf_path)
     for pdf in raw_pdfs:
-        print(f"Staging to CDN: {pdf.name}")
+        print(f"Staging locally: {pdf.name}")
         cdn_pdf, file_id = move_pdf_to_cdn(pdf)
         staged.append((file_id, cdn_pdf))
+
+    # Upload staged PDFs to Google Cloud Storage and collect URLs
+    gcs_urls = {}
+    if staged:
+        for file_id, cdn_pdf in staged:
+            try:
+                # Upload path matches desired public URL: http://auto.bda-news.com/{YYYY-MM-DD}/{id}.pdf
+                blob_path = f"{friday_date}/{file_id}.pdf"
+                url = upload_to_gcs(
+                    cdn_pdf,
+                    blob_path=blob_path,
+                    content_type="application/pdf",
+                )
+                gcs_urls[file_id] = url
+                print(f"Uploaded to GCS: {cdn_pdf.name} -> {url}")
+            except Exception as e:
+                print(f"GCS upload failed for {cdn_pdf.name}: {e}")
 
     # After staging, attempt to remove the source folder and any leftover files
     try:
@@ -591,9 +610,29 @@ def main() -> None:
         print("No summaries generated; nothing to write to highlights.")
         return
 
+    # Build items with URLs (compute deterministic URLs if missing)
+    items_with_urls: List[Tuple[str, Path, str]] = []
+    for fid, md_path in results:
+        url = gcs_urls.get(fid)
+        if not url:
+            # Deterministic public URL assuming provided base and bucket env
+            base = (
+                os.getenv("PUBLIC_URL_BASE")
+                or os.getenv("GCS_URL_BASE")
+                or "https://auto.bda-news.com"
+            ).rstrip("/")
+            bucket = os.getenv("GCS_BUCKET") or os.getenv("GCS_BUCKET_NAME") or "bda_auto_pdf_reports"
+            blob = f"{friday_date}/{fid}.pdf"
+            if "storage.googleapis.com" in base:
+                url = f"{base}/{bucket}/{blob}"
+            else:
+                # Custom domain fronts the bucket root
+                url = f"{base}/{blob}"
+        items_with_urls.append((fid, md_path, url))
+
     # Build and write final highlights
     highlights_md_path = FINAL_MDS_DIR / f"{friday_date}_sellside_highlights.md"
-    content = build_highlights_md(results)
+    content = build_highlights_md(items_with_urls)
     highlights_md_path.write_text(content, encoding="utf-8")
     print(f"Sellside highlights generated: {highlights_md_path}")
 
