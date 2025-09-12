@@ -521,17 +521,22 @@ def main() -> None:
     # Upload staged PDFs to Google Cloud Storage and collect URLs
     gcs_urls = {}
     if staged:
+        PUBLIC_BASE = "https://auto.bda-news.com".rstrip("/")
         for file_id, cdn_pdf in staged:
             try:
                 # Upload path matches desired public URL: http://auto.bda-news.com/{YYYY-MM-DD}/{id}.pdf
                 blob_path = f"{friday_date}/{file_id}.pdf"
-                url = upload_to_gcs(
+                # Perform upload (ignore return URL; we use custom domain)
+                _ = upload_to_gcs(
                     cdn_pdf,
                     blob_path=blob_path,
                     content_type="application/pdf",
+                    make_public=False,  # bucket-level policy handles public access
+                    sign_url=False,
                 )
-                gcs_urls[file_id] = url
-                print(f"Uploaded to GCS: {cdn_pdf.name} -> {url}")
+                url_custom = f"{PUBLIC_BASE}/{blob_path}"
+                gcs_urls[file_id] = url_custom
+                print(f"Uploaded to GCS: {cdn_pdf.name} -> {url_custom}")
             except Exception as e:
                 print(f"GCS upload failed for {cdn_pdf.name}: {e}")
 
@@ -585,24 +590,11 @@ def main() -> None:
         print("No summaries generated; nothing to write to highlights.")
         return
 
-    # Build items with URLs (compute deterministic URLs if missing)
+    # Build items with URLs (compute deterministic URLs using custom domain)
     items_with_urls: List[Tuple[str, Path, str]] = []
     for fid, md_path in results:
-        url = gcs_urls.get(fid)
-        if not url:
-            # Deterministic public URL assuming provided base and bucket env
-            base = (
-                os.getenv("PUBLIC_URL_BASE")
-                or os.getenv("GCS_URL_BASE")
-                or "https://auto.bda-news.com"
-            ).rstrip("/")
-            bucket = os.getenv("GCS_BUCKET") or os.getenv("GCS_BUCKET_NAME") or "bda_auto_pdf_reports"
-            blob = f"{friday_date}/{fid}.pdf"
-            if "storage.googleapis.com" in base:
-                url = f"{base}/{bucket}/{blob}"
-            else:
-                # Custom domain fronts the bucket root
-                url = f"{base}/{blob}"
+        blob = f"{friday_date}/{fid}.pdf"
+        url = gcs_urls.get(fid) or f"https://auto.bda-news.com/{blob}"
         items_with_urls.append((fid, md_path, url))
 
     # Build and write final highlights

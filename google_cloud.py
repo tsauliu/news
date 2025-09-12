@@ -7,7 +7,7 @@ generating time-limited signed URLs.
 
 Configuration via environment variables (optional):
 - `GCS_BUCKET` or `GCS_BUCKET_NAME`: default target bucket name.
-- `GCS_MAKE_PUBLIC`: 'true'/'false' to make uploaded objects public (default: true).
+- `GCS_MAKE_PUBLIC`: 'true'/'false' to make uploaded objects public (default: false).
 - `GCS_SIGN_URL`: 'true'/'false' to return a signed URL if not public (default: false).
 - `GCS_URL_BASE`: optional custom base like 'https://storage.googleapis.com'.
 
@@ -152,7 +152,8 @@ def upload_to_gcs(
     blob.upload_from_filename(str(lp), content_type=ct)
 
     # Determine URL strategy
-    make_public = _bool_env("GCS_MAKE_PUBLIC", True) if make_public is None else make_public
+    # Default behavior: do NOT call make_public; rely on bucket-level policy.
+    make_public = _bool_env("GCS_MAKE_PUBLIC", False) if make_public is None else make_public
     sign_url = _bool_env("GCS_SIGN_URL", False) if sign_url is None else sign_url
 
     if make_public:
@@ -178,5 +179,12 @@ def upload_to_gcs(
         )
         return url
 
-    # Default: return canonical HTTPS (may require auth)
-    return blob.public_url or f"https://storage.googleapis.com/{bucket}/{blob_name}"
+    # Default: return deterministic public URL assuming bucket policy grants public access.
+    # Prefer custom/public base if provided even without object ACLs.
+    public_base = os.getenv("PUBLIC_URL_BASE") or os.getenv("GCS_URL_BASE")
+    if public_base:
+        base = public_base.rstrip('/')
+        if "storage.googleapis.com" in base:
+            return f"{base}/{bucket}/{blob_name}"
+        return f"{base}/{blob_name}"
+    return f"https://storage.googleapis.com/{bucket}/{blob_name}"
