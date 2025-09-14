@@ -28,7 +28,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from markitdown import MarkItDown
 
 from parameters import friday_date
-from google_cloud import upload_to_gcs
+from google_cloud import upload_to_gcs, gcs_blob_exists
 from models import OneAPI_request
 def _clean_markdown_contents(raw_text: str) -> str:
     """Replicate the cleaning heuristic formerly in pdfreport.two_clean_markdown.
@@ -524,17 +524,25 @@ def main() -> None:
         PUBLIC_BASE = "https://auto.bda-news.com".rstrip("/")
         for file_id, cdn_pdf in staged:
             try:
-                # Upload path matches desired public URL: http://auto.bda-news.com/{YYYY-MM-DD}/{id}.pdf
+                # Upload path matches desired public URL: https://auto.bda-news.com/{YYYY-MM-DD}/{id}.pdf
                 blob_path = f"{friday_date}/{file_id}.pdf"
-                # Perform upload (ignore return URL; we use custom domain)
+                url_custom = f"{PUBLIC_BASE}/{blob_path}"
+
+                # If already present on GCS, skip uploading
+                if gcs_blob_exists(blob_path=blob_path):
+                    gcs_urls[file_id] = url_custom
+                    print(f"Skip upload (exists): {cdn_pdf.name} -> {url_custom}")
+                    continue
+
+                # Perform upload; do not change ACLs
                 _ = upload_to_gcs(
                     cdn_pdf,
                     blob_path=blob_path,
                     content_type="application/pdf",
-                    make_public=False,  # bucket-level policy handles public access
+                    make_public=False,
                     sign_url=False,
+                    skip_if_exists=True,
                 )
-                url_custom = f"{PUBLIC_BASE}/{blob_path}"
                 gcs_urls[file_id] = url_custom
                 print(f"Uploaded to GCS: {cdn_pdf.name} -> {url_custom}")
             except Exception as e:

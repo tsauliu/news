@@ -102,6 +102,25 @@ def _get_storage_client():
     return storage.Client()
 
 
+def gcs_blob_exists(*, blob_path: str, bucket_name: Optional[str] = None) -> bool:
+    """Return True if the given blob exists in the target bucket.
+
+    Uses the same bucket resolution as upload_to_gcs.
+    """
+    storage = _safe_import_storage()
+    client = _get_storage_client()
+    bucket_default = os.getenv("GCS_BUCKET") or os.getenv("GCS_BUCKET_NAME") or "bda_auto_pdf_reports"
+    bucket = bucket_name or bucket_default
+    if not bucket:
+        return False
+    try:
+        bucket_ref = client.bucket(bucket)
+        blob = bucket_ref.blob(blob_path)
+        return blob.exists(client=client)
+    except Exception:
+        return False
+
+
 def upload_to_gcs(
     local_path: str | Path,
     *,
@@ -112,6 +131,7 @@ def upload_to_gcs(
     sign_url: Optional[bool] = None,
     signed_url_expiration_seconds: int = 7 * 24 * 3600,
     cache_control: Optional[str] = None,
+    skip_if_exists: bool = True,
 ) -> str:
     """Upload a file to GCS and return an accessible URL.
 
@@ -138,6 +158,21 @@ def upload_to_gcs(
     client = _get_storage_client()
     bucket_ref = client.bucket(bucket)
     blob = bucket_ref.blob(blob_name)
+
+    # If already exists and skipping is enabled, just return URL
+    if skip_if_exists:
+        try:
+            if blob.exists(client=client):
+                public_base = os.getenv("PUBLIC_URL_BASE") or os.getenv("GCS_URL_BASE")
+                if public_base:
+                    base = public_base.rstrip('/')
+                    if "storage.googleapis.com" in base:
+                        return f"{base}/{bucket}/{blob_name}"
+                    return f"{base}/{blob_name}"
+                return f"https://storage.googleapis.com/{bucket}/{blob_name}"
+        except Exception:
+            # If existence check fails, proceed to attempt upload
+            pass
 
     # Infer content type if not provided
     ct = content_type
