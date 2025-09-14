@@ -3,7 +3,8 @@
 目标与范围：
 - 重点赛道：Robotaxi、核心芯片与技术、重点车企动态、政策与资本市场（如有其他合适赛道可新增）。
 - 重点玩家（示例）：Tesla、Waymo、Pony.ai、Baidu Apollo、Horizon Robotics（地平线）、Momenta 等；也要覆盖其他出现的玩家。
-- 详细要点来自 Key Takeaway 区块；Sellside Highlights 只用于补充玩家级“概述”一句话，不纳入详细要点。
+- 详细要点主要来自 Key Takeaway 区块；但若 Key Takeaway 未覆盖某个在 Sellside Highlights 中出现的“关键信息点”（如核心硬指标/数据：BOM 成本、车型/代际信息、投放规模、产能/销量、签单金额、CapEx/OpEx、时间表等），则需要将该 Sellside 要点一并纳入该玩家的“详细要点”。
+- 合并规则：同一玩家下，先收集两周内所有 Key Takeaway 要点，再补充不重复的 Sellside 要点；避免重复表达，必要时对同义/重复要点去重（保留信息更完整者）。不要因为来源不同而忽略重要 Sellside 事实。
 
 严格格式（不要添加额外引言/结语）：
 1. 赛道（三级标题，如“### 1. Robotaxi 进展”）
@@ -12,6 +13,7 @@
        - {来自 Key Takeaway 的原始 bullet 1}
        - {来自 Key Takeaway 的原始 bullet 2}
        - ...（涵盖两周内该玩家的全部 Key Takeaway 要点）
+       - {若 Key Takeaway 未覆盖且来自 Sellside 的关键信息，要追加为 bullet；保持原句，不改写}
    - 其他（如有）：“#### 其他/Other Players” 下列出无法明确归属或较低优先级的要点（同样保留原文，不要改写，不要遗漏）
 
 排序要求：
@@ -22,8 +24,9 @@
 - 若原始要点已有日期，保持不动；若没有，可在玩家“一句话概述”中自然带出关键日期（如“9月X日…”）。不要在“详细要点（原文）”中改写或追加文字。
 
 内容规则（非常重要）：
-- “详细要点”必须完全来自 Key Takeaway 段落的 bullet 列表，逐条保留原文，不得改写、合并或删减；可以重排顺序。
-- 不要把 Sellside Highlights 的内容放入“详细要点”；如需引用，只能用于玩家的一句话概述。
+- “详细要点”以 Key Takeaway 为主，但允许将 Sellside 中的“关键信息点”（尤其是数字与代际/产品关键信息，如“Pony.ai 将 Gen 8 Robotaxi 的 BOM 降至 15–20 万人民币”等）补充进来；保留原文表述，不得改写。
+- 去重与合并：当 Key Takeaway 与 Sellside 就同一事实存在重复或同义表达时，保留信息更完整或更新的一条，删除重复项；不要出现同一事实的重复 bullet。
+- 一句话概述可以参考两类来源（Key Takeaway 与 Sellside），用一句话抓住该玩家在这两周的最重要结论/里程碑。
 - 确保合并两周内所有 Key Takeaway，要点一个不漏；归属不清的放入“其他/Other Players”。
 
 示例骨架（示意）：
