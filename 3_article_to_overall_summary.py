@@ -95,7 +95,7 @@ def merge_md_files() -> List[str]:
     return output_files
 
 
-def _generate_sector_summary(output_file: str, prompt_text: str) -> Tuple[str, str]:
+def _generate_sector_summary(output_file: str, prompt_template: str) -> Tuple[str, str]:
     """Worker: generate a summary for a single sector file.
 
     Returns a tuple of (sector_name, md_summary).
@@ -106,6 +106,11 @@ def _generate_sector_summary(output_file: str, prompt_text: str) -> Tuple[str, s
             combined_md = f.read()
 
         print(f"Generating summary for sector: {sector_name}")
+        if "{{TARGET_SECTOR}}" in prompt_template:
+            prompt_text = prompt_template.replace("{{TARGET_SECTOR}}", sector_name)
+        else:
+            # Fallback in case the template was missing the placeholder.
+            prompt_text = f"{prompt_template}\n\n固定分类：{sector_name}。仅输出该分类的段落。"
         md_summary = OneAPI_request(prompt_text, combined_md)
         return sector_name, md_summary
     except Exception as e:
@@ -119,14 +124,14 @@ def summarize_sectors_parallel(output_files: List[str]) -> Dict[str, str]:
     os.makedirs(SUMMARY_DIR, exist_ok=True)
     archive_existing_in_target(SUMMARY_DIR, exclude_contains=[friday_date])
 
-    prompt_text = open("./prompt/auto_md_to_summary.md", "r", encoding="utf-8").read()
+    prompt_template = open("./prompt/auto_md_to_summary.md", "r", encoding="utf-8").read()
 
     sector_summaries: Dict[str, str] = {sector: "" for sector in sector_list}
 
     # Use one process per sector so all run at once
     max_procs = max(1, len(output_files))
     with ProcessPoolExecutor(max_workers=max_procs) as executor:
-        future_map = {executor.submit(_generate_sector_summary, of, prompt_text): of for of in output_files}
+        future_map = {executor.submit(_generate_sector_summary, of, prompt_template): of for of in output_files}
         for future in as_completed(future_map):
             sector_name, md_summary = future.result()
             if md_summary:
