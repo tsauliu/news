@@ -28,7 +28,6 @@ import pandas as pd
 # Third-party libraries used by the original scripts
 import feedparser
 from bs4 import BeautifulSoup
-import requests
 
 from parameters import (
     friday_date,
@@ -37,6 +36,7 @@ from parameters import (
     ARTICLE_SOURCE,
     errorkeywords,
 )
+from models import send_feishu_notification
 from utils import archive_existing_in_target
 
 
@@ -47,28 +47,6 @@ URLS_DIR = "data/1_urls"
 RAW_MDS_ROOT_DIR = "data/2_raw_mds"
 RAW_MDS_DIR = f"{RAW_MDS_ROOT_DIR}/{friday_date}"
 RSS_ARTICLES_CSV = "data/rss_articles.csv"
-FEISHU_WEBHOOK_URL = "https://open.feishu.cn/open-apis/bot/v2/hook/869f9457-6d3d-4f88-8bee-d21c41b11625"
-
-
-def send_feishu_notification(article_count: int) -> None:
-    """Send the weekly article count to the Feishu webhook."""
-    payload = {
-        "msg_type": "text",
-        "content": {
-            "text": f"{friday_date} weekly news URLs prepared: {article_count} items."
-        },
-    }
-
-    try:
-        response = requests.post(FEISHU_WEBHOOK_URL, json=payload, timeout=10)
-        if response.status_code != 200:
-            print(
-                "Feishu notification failed: "
-                f"{response.status_code} {response.text.strip()}"
-            )
-    except requests.RequestException as exc:
-        print(f"Feishu notification error: {exc}")
-
 
 def _html_to_text(html: str) -> str:
     if not html:
@@ -324,7 +302,8 @@ def save_urls_outputs(df_all: pd.DataFrame, df_recent: pd.DataFrame) -> None:
     print(f"{os.path.basename(csv_path)} saved")
     print(f"{len(df_all)} total articles saved to Excel")
 
-    send_feishu_notification(len(df_recent))
+    message = f"{friday_date} weekly news URLs prepared: {len(df_recent)} items."
+    send_feishu_notification(message)
 
 
 # ---------------------------

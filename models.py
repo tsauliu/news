@@ -1,16 +1,52 @@
 #%%
-import os, time
+import os
+import time
+from typing import Optional
+
+import requests
 from openai import OpenAI
 
 # OneAPI Configuration - hardcoded
 ONE_API_BASE_URL = 'http://localhost:3001/v1'
 ONE_API_KEY = 'sk-xrb5yN283dC9ytWNEaE207B3B2De4079B5D1C09cE988DdE9'
 
+# Feishu webhook configuration
+DEFAULT_FEISHU_WEBHOOK_URL = (
+    "https://open.feishu.cn/open-apis/bot/v2/hook/869f9457-6d3d-4f88-8bee-d21c41b11625"
+)
+
+
 # Initialize OpenAI client
 _openai_client = OpenAI(
     api_key=ONE_API_KEY,
     base_url=ONE_API_BASE_URL
 )
+
+def send_feishu_notification(
+    message: str,
+    *,
+    webhook_url: Optional[str] = None,
+    timeout: int = 10,
+) -> bool:
+    """Post a simple text notification to the configured Feishu webhook."""
+    url = webhook_url or os.getenv("FEISHU_WEBHOOK_URL") or DEFAULT_FEISHU_WEBHOOK_URL
+    if not url:
+        print("Feishu webhook URL not configured; skip notification.")
+        return False
+
+    payload = {"msg_type": "text", "content": {"text": message}}
+
+    try:
+        response = requests.post(url, json=payload, timeout=timeout)
+        if response.status_code == 200:
+            return True
+        print(
+            "Feishu notification failed: "
+            f"{response.status_code} {response.text.strip()}"
+        )
+    except requests.RequestException as exc:
+        print(f"Feishu notification error: {exc}")
+    return False
 
 def OneAPI_request(prompt, context="",model="gemini-2.5-pro"):
     """

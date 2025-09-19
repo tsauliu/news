@@ -16,10 +16,12 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import traceback
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from parameters import friday_date
+from models import send_feishu_notification
 
 
 # ---------- File helpers ----------
@@ -631,15 +633,60 @@ def main() -> None:
     print(f"📅 Date: {args.date}")
     print(f"🌐 Languages: {', '.join(langs)}")
 
-    any_ok = False
-    for lg in langs:
-        out = generate_one(lg, args.date)
-        any_ok = any_ok or (out is not None)
+    results: Dict[str, Optional[Path]] = {}
+    errors: Dict[str, Optional[str]] = {}
 
-    if any_ok:
+    for lg in langs:
+        try:
+            out = generate_one(lg, args.date)
+            results[lg] = out
+            if out is None:
+                errors[lg] = "No email generated (check key takeaways)."
+        except Exception as exc:  # pragma: no cover - defensive guard
+            errors[lg] = f"Exception: {exc}"
+            results[lg] = None
+            print(f"Error generating {lg} email: {exc}")
+            traceback.print_exc()
+
+    success_langs = [lg for lg, path in results.items() if path]
+    failed_langs = [lg for lg in langs if not results.get(lg)]
+
+    if success_langs and failed_langs:
+        print(f"⚠️ Partial success. Generated: {', '.join(success_langs)}; Failed: {', '.join(failed_langs)}")
+    elif success_langs:
         print("✅ Done.")
     else:
         print("❌ Failed to generate any email. Ensure key takeaway exists.")
+
+    message_lines: List[str] = []
+    if success_langs and not failed_langs:
+        message_lines.append(
+            f"✅ {args.date} weekly email generated for {', '.join(success_langs)}."
+        )
+        for lg in success_langs:
+            path = results.get(lg)
+            if path:
+                message_lines.append(f"{lg}: {path}")
+    elif success_langs and failed_langs:
+        message_lines.append(
+            f"⚠️ {args.date} weekly email partially generated."
+        )
+        message_lines.append(f"Generated: {', '.join(success_langs)}")
+        message_lines.append(f"Failed: {', '.join(failed_langs)}")
+        for lg in failed_langs:
+            err = errors.get(lg)
+            if err:
+                message_lines.append(f"{lg} issue: {err}")
+    else:
+        message_lines.append(f"❌ {args.date} weekly email generation failed.")
+        for lg in failed_langs or langs:
+            err = errors.get(lg)
+            if err:
+                message_lines.append(f"{lg}: {err}")
+        if len(message_lines) == 1:
+            message_lines.append("No email outputs were produced.")
+
+    send_feishu_notification("\n".join(message_lines))
 
 
 if __name__ == "__main__":
